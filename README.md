@@ -1,2 +1,18 @@
+<!-- badges: start -->
+![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)
+
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+<!-- badges: end -->
+
 # MPSAT
-Enquète de satisfaction
+
+**Étude interventionnelle monocentrique**
+
+Évaluation des impacts multidimensionnels des ateliers d’éducation
+thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité
+de vie, la santé mentale des patients atteints de bpco pris en charge par
+la mpsat sur le territoire.
+
+26/10/2023 **Plan d'analyse** avec calcul du nombre de cas.
+
+
