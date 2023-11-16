@@ -9,10 +9,10 @@
 **Étude interventionnelle monocentrique**
 
 Évaluation des impacts multidimensionnels des ateliers d’éducation
-thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité
-de vie, la santé mentale des patients atteints de bpco pris en charge par
-la mpsat sur le territoire.
+thérapeutique des patients sur la gestion de la maladie, la qualité
+de vie, la santé mentale des patients atteints de BPCO pris en charge par
+la MPSAT sur le territoire.
 
-26/10/2023 **Plan d'analyse** avec calcul du nombre de cas.
+16/11/2023 **Plan d'analyse** avec calcul du nombre de cas.
 
 
