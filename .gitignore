@@ -11,6 +11,7 @@ _extensions/
 Doc/
 README_files/
 .quarto/
-
 /.quarto/
 *cache*
+fmpsat_etp__plan_analyse.qmd
+*_DOC*

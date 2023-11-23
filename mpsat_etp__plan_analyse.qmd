@@ -1,10 +1,11 @@
 ---
-subtitle: "Plan d'analyse statistique"
+subtitle: "Plan d'analyse statistique (V2)"
 documentclass: scrartcl
 ---
 
 ```{r info}
-rm(list=ls())
+# clinical trial
+rm(list = ls())
 library("baseph")
 library(epiDisplay)
 # sessionInfo()
@@ -30,8 +31,8 @@ Des graphiques seront réalisés pour les résultats importants (package `ggplot
 moy1 <- 2.96
 dif <- 0.1
 moy2 <- moy1 * (1 + dif)
-et <- mean(c(0.54,.76,.51,.47,.39,.42,.53,.63))
-nn <- n.for.2means(moy1, moy2, et,et)
+et <- mean(c(0.54, .76, .51, .47, .39, .42, .53, .63))
+nn <- n.for.2means(moy1, moy2, et, et)
 nb <- nn$n1
 ```
 
@@ -41,7 +42,7 @@ Le critère principal porte sur la comparaison du résultat chiffré du score \t
 
 Un décompte des données manquantes sera réalisé & présenté par un tableau ou un graphique. Les variables comportant trop de données manquantes ou non utilisables ne seront pas prises en compte après validation par le promoteur en particulier les scores \textsc{heiq} incomplets devront être discutés au cas par cas.
 
-Une validation interne des questionnaires (coefficient $\alpha$ de \textsc{Cronbach}- package `Cronbach` [@cronb]) sera réalisée sur le score \textsc{heiq}.
+Une validation interne des questionnaires (coefficient $\alpha$ de \textsc{Cronbach} - package `Cronbach`[@cronb]) sera réalisée sur le score \textsc{heiq}.
 
 # Description de la population
 
@@ -51,11 +52,15 @@ Un tableau & des graphiques (pyramide des âges\dots) présenteront les données
 
 *L'impact global des ateliers d'ETP sera évalué à l'aide du score global du questionnaire validé en langue française HEIQ. Il sera comparé entre les patients du groupe ETP, et ceux du groupe témoin.*
 
-Chaque item est une échelle de Likert à quatre niveaux regroupés en thèmes. On calcule pour chaque thème la moyenne & l'écart-type des items.
+Chaque item est une échelle de Likert à quatre niveaux regroupés en thèmes. 
 
 Un premier tableau présentera les résultats item par item pour chaque groupe. Aucun test ne sera réalisé à ce stade.
 
-Le score sera présenté par les moyennes ± écart-type des huit thèmes pour chaque groupe & comparées par des tests t de \textsc{Student}. Une comparaison globale sur le score total sera présentée. Une présentation graphique sera réalisée (package `ggstats` [@ggstats]).
+On calcule pour chaque thème la moyenne & l'écart-type des items après avoir transformé le résultat de chaque item en valeur numérique (de 1 à 4) & en additionnant les valeurs pour chaque thème (précédure validée pour ce score). Le score sera présenté par les moyennes ± écart-type des huit thèmes pour chaque groupe & comparées par des tests t de \textsc{Student}. Une comparaison globale sur le score total sera présentée. Une présentation graphique sera réalisée (package `ggstats`[@ggstats]).
+
+Une recherche de facteurs pouvant influer la réponse aux ateliers (âge, gravité de la maladie\dots) sera réalisée tout d'abord une analyse simple avec des tests item par item sera présentée dans un tableau. Cette analyse sera réalisée uniquement sur le score total pour ne pas multiplier les tests.
+
+Un modèle de régression logistique sera employé. On incorporera dans ce modèle tous les critères ayant une réponse significative avec un seuil de la p.value à 0,2 lors  de l'étape précédente ainsi que l'âge & la gravité de la maladie (score  \textsc{Gold}). Vu l'effectif prévu un maximum de sept à huit items devra être respecté. Une recherche du meilleur modèle sera réalisée par un step-by-step descendant évaluée par le critère d’information d’Akaike. Cette étape sera réalisée après imputation des données manquantes (package `missMDA`[@missmda]) mais le résultat final sera calculé sur les données vraies. les résultats seront présentés soit dans un tableau de régression, soit par un graphique en *arbre de Noël*.
 
 # Objectifs secondaires
 
@@ -63,7 +68,7 @@ Le score sera présenté par les moyennes ± écart-type des huit thèmes pour c
 
 *La qualité de vie des patients du groupe ETP versus ceux du groupe témoin sera évaluée à l'aide du questionnaire validé VQ11.*
 
-Ce score d'auto-évaluation se compose de 11 items en échelle de Likert à cinq niveau. une présentation des résultats sera réalisée par un tableau & un graphique (package `ggstats`). Une comparaison du score global sera présentée.
+Ce score d'auto-évaluation se compose de 11 items en échelle de Likert à cinq niveau. une présentation des résultats sera réalisée par un tableau & un graphique (package `ggstats`[@ggstats]). Une comparaison du score global sera présentée.
 
 ## Objectif 2
 
@@ -81,11 +86,12 @@ Une comparaison simple sera faite sur le nombre d'hospitalisation entre les deux
 
 *Adhésion aux traitements des patients du groupe ETP versus ceux du groupe témoin.*
 
-Un tableau présentant la consommation de médicaments dans chaque groupe & par classe thérapeutique sera réalisé. Des tests pourront être réalisés si le nombre de classes est faible.
+Un tableau présentant la consommation de médicaments dans chaque groupe par classe thérapeutique & par mode d'administration (en particulier pour les médicaments inhalés) sera réalisé. Des tests pourront être réalisés si le nombre de classes est faible.
+
 
 ## Objectif 5
 
-*La perception et le ressenti des patients du groupe ETP versus ceux du groupe témoin concernant ces ateliers seront évaluées grâce à un questionnaire de satisfaction.""*
+*La perception et le ressenti des patients du groupe ETP versus ceux du groupe témoin concernant ces ateliers seront évaluées grâce à un questionnaire de satisfaction.*
 
 Un tableau présentera les résultats pour chaque item (nombre & pourcentage) groupe par groupe. Des comparaisons seront réalisées par un test t de \textsc{Student} avec correction de \textsc{Holm-Bonferroni} (package `gtsummary` [@gtsummary]) vu le grand nombre de tests que cela représente.
 
@@ -96,3 +102,6 @@ L'analyse statistique sera réalisée avec le logiciel **R**[@rstat] & divers pa
 Un dépôt GitHub sera utilisé qui ne comprendra que le code & non les données ou résultats. Au besoin un faux tableau de données sera présenté pour permettre des tests.
 
 <https://github.com/philippemichel/MPSAT>
+
+
+
