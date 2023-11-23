@@ -29,6 +29,7 @@ include-in-header:
     \AddToHook{env/longtable/before}{\addfontfeatures{Numbers=Monospaced}}
     \usepackage{alphabeta}
     \usepackage{marginnote}
+    \usepackage[math=arsenal+kpsans]{arsenal}
     \renewcommand*{\marginfont}{\footnotesize}
 df-print : kable
 jss-pdf:
@@ -39,12 +40,6 @@ number-sections: true
 toc: true
 lof: false
 lot: false
-mainfont: Fira-sans
-mainfontoptions:
-  - Ligatures=TeX
-monofont: Fira Mono
-sansfontoptions:
-  - Ligatures=TeX
 fig-cap-location: bottom
 tbl-cap-location: top
 classoption: [french, fontsize=10pt]
@@ -59,4 +54,4 @@ license: "MIT"
 echo: false
 warning: false
 message: false
-cache: false
+cache: true

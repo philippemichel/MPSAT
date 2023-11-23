@@ -11,3 +11,6 @@ _extensions/
 Doc/
 README_files/
 .quarto/
+
+/.quarto/
+*cache*
