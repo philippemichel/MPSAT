@@ -95,6 +95,18 @@ Un tableau présentant la consommation de médicaments dans chaque groupe par cl
 
 Un tableau présentera les résultats pour chaque item (nombre & pourcentage) groupe par groupe. Des comparaisons seront réalisées par un test t de \textsc{Student} avec correction de \textsc{Holm-Bonferroni} (package `gtsummary` [@gtsummary]) vu le grand nombre de tests que cela représente.
 
+## Objectif 6
+
+*Les différents aspects de la motivation seront évalués à l'aide du questionnaire validé \textsc{BREQ-2}.*
+
+Les réponses (échelles de Likert) seront tout d'abord présentées  item par item (package `ggstats`[@ggstats]) sans compararaison afin de ne pas multiplier les tests puis par score : 
+
+- Score de motivation autodeterminée
+- Score de motivation non autodeterminéeé
+- Score global de motivation (SDI)
+
+Pour chacun de ces scores (résultat numérique) une comparaison entre les deux groupes sera réalisée par un test t de \textsc{Student} & présentée par un tableau & un graphique.
+
 # Technique {.appendix}
 
 L'analyse statistique sera réalisée avec le logiciel **R**[@rstat] & divers packages. Outre ceux cités dans le texte ou utilisera en particulier `tidyverse` [@tidy] & `baseph` [@baseph].
