@@ -1,5 +1,5 @@
 ---
-subtitle: "Plan d'analyse statistique (V3)"
+subtitle: "Plan d'analyse statistique (V4)"
 documentclass: scrartcl
 ---
 
