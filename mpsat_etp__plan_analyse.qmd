@@ -1,5 +1,5 @@
 ---
-subtitle: "Plan d'analyse statistique (V2)"
+subtitle: "Plan d'analyse statistique (V3)"
 documentclass: scrartcl
 ---
 
@@ -19,7 +19,7 @@ library(epiDisplay)
 
 Le risque $\alpha$ retenu sera de 0,05 & la puissance de 0,8.
 
-Toutes les variables sont discrètes & seront présentés en nombre avec le pourcentage. L'intervalle de confiance (à 95 %) sera calculé par bootstrap (package `boot` [@boot]). Le test du $\chi^2$ de \textsc{Spearman} pourra être utilisé sous réserve d'un effectif suffisant, à défaut le test exact de \textsc{Fischer} pour comparer des items d'un même questionnaire entre eux. Les comparaisons entre les deux groupes seront réalisées après transformation en nombre des résultats des questionnaire (validé pour le \textsc{heiq} en prenant la moyenne par thème). Les comparaisons seront alors réalisées par un test t de Student après vérification des conditions d'application. À défaut un test non paramétrique de Wilcoxon sera utilisé.
+Toutes les variables sont discrètes & seront présentées en nombre avec le pourcentage. L'intervalle de confiance (à 95 %) sera calculé par bootstrap (package `boot` [@boot]). Le test du $\chi^2$ de \textsc{Spearman} pourra être utilisé sous réserve d'un effectif suffisant, à défaut le test exact de \textsc{Fischer} pour comparer des items d'un même questionnaire entre eux. Les comparaisons entre les deux groupes seront réalisées après transformation en nombre des résultats des questionnaires (validé pour le \textsc{heiq} en prenant la moyenne par thème). Les comparaisons seront alors réalisées par un test t de Student après vérification des conditions d'application. À défaut un test non paramétrique de Wilcoxon sera utilisé.
 
 Des graphiques seront réalisés pour les résultats importants (package `ggplot2` [@ggplot]).
 
@@ -36,7 +36,7 @@ nn <- n.for.2means(moy1, moy2, et, et)
 nb <- nn$n1
 ```
 
-Le critère principal porte sur la comparaison du résultat chiffré du score \textsc{heiq} entre le groupe interventionnel & le groupe témoin. Une étude de validation de la version française de ce score \marginnote{Validation française du health education impact questionnaire (\textsc{heiq}) auprès d’une clientèle avec maladies chroniques en soins de première ligne -- Anne BÉLANGER (Université du Québec à Chicoutimi 2015)} retrouve sur un échantillon de près de 300 cas un résultat global à `r moy1` ± `r round(et,2)`. En estimant qu'une différence de 10 % de ce score entre les deux groupes a une signification clinique & que les deux groupes gardent le même écart-type, on peut estimé l'effectif nécessaire à **`r nb` cas** utilisables par groupe soit un minimum de `r ceiling(nb* 2.4)` cas à inclure au total.
+Le critère principal porte sur la comparaison du résultat chiffré du score \textsc{heiq} entre le groupe interventionnel & le groupe témoin. Une étude de validation de la version française de ce score \marginnote{Validation française du health education impact questionnaire (\textsc{heiq}) auprès d’une clientèle avec maladies chroniques en soins de première ligne -- Anne BÉLANGER (Université du Québec à Chicoutimi 2015)} retrouve sur un échantillon de près de 300 cas un résultat global à `r moy1` ± `r round(et,2)`. En estimant qu'une différence de 10 % de ce score entre les deux groupes a une signification clinique & que les deux groupes gardent le même écart-type, on peut estimé l'effectif nécessaire à **`r nb` cas** utilisables par groupe soit un minimum de `r ceiling(nb* 1.1)` cas à inclure au total.
 
 ## Données manquantes & contrôle qualité
 
@@ -64,6 +64,8 @@ Un modèle de régression logistique sera employé. On incorporera dans ce modè
 
 # Objectifs secondaires
 
+Pour tous les scores suivants la transformation numérique & les sous-groupes, calculs etc. ont été validés par les rédacteurs des scores.
+
 ## Objectif 1
 
 *La qualité de vie des patients du groupe ETP versus ceux du groupe témoin sera évaluée à l'aide du questionnaire validé VQ11.*
@@ -78,15 +80,20 @@ Ce score donne un résultat chiffré de 0 à 21 résumé en trois niveaux: pas d
 
 ## Objectif 3
 
+*La motivation envers l'activité physique pratiquée durant les temps libres sera évaluée par le questionnaire BREQ-2 version courte*
+
+
+Le score BREQ-2 comporte 6 items regroupés en trois variables : 
+ - Score de motivation autodéterminée (SDI : de 1 à 21)
+ - Score globale de motivation (SDI : de -24 à 24)
+ 
+ Les items seront présentés dans un tableau mais aucun test ne sera fait à ce niveau. Seuls les deux scores seront comparés entre les deux groupes par des tests t de \textsc{Student}. Une présentation graphique sera réalisée (package `ggstats`[@ggstats]). 
+ 
+## Objectif 4
+
 *Nombre d'hospitalisations des patients du groupe ETP versus ceux du groupe témoin.*
 
 Une comparaison simple sera faite sur le nombre d'hospitalisation entre les deux groupes & présentée par un Odd-Ratio (package `epiDisplay` [@epid]). Si la répartition du nombre d'hospitalisations est très asymétrique (en particulier s'il y a beaucoup de patients n'ayant pas été hospitalisés) ce nombre sera discrétisé en deux ou trois classes puis les effectifs comparés par un test du $\chi^2$ ou de Fischer. \footnote{Par exemple : \begin{itemize}\item aucune hospitalisation, \item 1 à 2 hospitalisations, \item plus de deux hospitalisations.\end{itemize}}
-
-## Objectif 4                           
-
-*Adhésion aux traitements des patients du groupe ETP versus ceux du groupe témoin.*
-
-Un tableau présentant la consommation de médicaments dans chaque groupe par classe thérapeutique & par mode d'administration (en particulier pour les médicaments inhalés) sera réalisé. Des tests pourront être réalisés si le nombre de classes est faible.
 
 
 ## Objectif 5
@@ -95,17 +102,6 @@ Un tableau présentant la consommation de médicaments dans chaque groupe par cl
 
 Un tableau présentera les résultats pour chaque item (nombre & pourcentage) groupe par groupe. Des comparaisons seront réalisées par un test t de \textsc{Student} avec correction de \textsc{Holm-Bonferroni} (package `gtsummary` [@gtsummary]) vu le grand nombre de tests que cela représente.
 
-## Objectif 6
-
-*Les différents aspects de la motivation seront évalués à l'aide du questionnaire validé \textsc{BREQ-2}.*
-
-Les réponses (échelles de Likert) seront tout d'abord présentées  item par item (package `ggstats`[@ggstats]) sans compararaison afin de ne pas multiplier les tests puis par score : 
-
-- Score de motivation autodeterminée
-- Score de motivation non autodeterminéeé
-- Score global de motivation (SDI)
-
-Pour chacun de ces scores (résultat numérique) une comparaison entre les deux groupes sera réalisée par un test t de \textsc{Student} & présentée par un tableau & un graphique.
 
 # Technique {.appendix}
 
