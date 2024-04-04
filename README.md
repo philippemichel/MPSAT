@@ -1,3 +1,5 @@
+![USRC](novo_usrc.png)
+
 <!-- badges: start -->
 
 ![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)
@@ -15,6 +17,5 @@ thérapeutique des patients sur la gestion de la maladie, la qualité
 de vie, la santé mentale des patients atteints de BPCO pris en charge par
 la MPSAT sur le territoire.
 
-28/11/2023 **Plan d'analyse** avec calcul du nombre de cas.
+04/04/2024 **Plan d'analyse** avec calcul du nombre de cas.
 
-P
