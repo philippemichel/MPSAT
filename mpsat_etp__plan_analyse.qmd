@@ -1,5 +1,5 @@
 ---
-subtitle: "Plan d'analyse statistique (V4)"
+subtitle: "Plan d'analyse statistique (V 5.0)"
 documentclass: scrartcl
 ---
 
@@ -48,13 +48,29 @@ Une validation interne des questionnaires (coefficient $\alpha$ de \textsc{Cronb
 
 Un tableau & des graphiques (pyramide des âges\dots) présenteront les données démographiques seront présentés. Des comparaisons entre les deux groupes seront réalisées pour rechercher une éventuelle différence.
 
+## Témoins vierges d'ETP ou non               
+
+Un nombre important de patients du groupe témoin ont plus ou moins suivis des ateliers d'ETP. Une analyse de sous-groupe sera réalisée pour comparer les résultats des patients vierges d'ETP avec ceux ayant déjà suivi des ateliers.
+
+On réalisera donc pour chaque item important trois analyses : 
+
+- en `intention de traiter` : ETP vs témoin.
+- en `per protocole` : ETP et témoins ayant déjà suivi un  d'ETP vs témoins vierges d'ETP.
+- une analyse entre les trois groupes : ETP vs témoins ayant déjà suivi un  d'ETP vs témoins vierges d'ETP. Un test de Kruskal-Wallis sera alors utilisé.
+
+
 # Objectif principal
 
-*L'impact global des ateliers d'ETP sera évalué à l'aide du score global du questionnaire validé en langue française HEIQ. Il sera comparé entre les patients du groupe ETP, et ceux du groupe témoin.*
+*L'impact global des ateliers d'ETP sera évalué à l'aide du score global du questionnaire validé en langue française HEIQ.*
 
 Chaque item est une échelle de Likert à quatre niveaux regroupés en thèmes. 
 
-Un premier tableau présentera les résultats item par item pour chaque groupe. Aucun test ne sera réalisé à ce stade.
+Deux tableaux présenteront les résultats item par item pour chaque groupe : 
+
+- ETP vs témoin
+- ETP vs témoin vierges d'ETP vs témoin non vierges
+
+Aucun test ne sera réalisé à ce stade.
 
 On calcule pour chaque thème la moyenne & l'écart-type des items après avoir transformé le résultat de chaque item en valeur numérique (de 1 à 4) & en additionnant les valeurs pour chaque thème (précédure validée pour ce score). Le score sera présenté par les moyennes ± écart-type des huit thèmes pour chaque groupe & comparées par des tests t de \textsc{Student}. Une comparaison globale sur le score total sera présentée. Une présentation graphique sera réalisée (package `ggstats`[@ggstats]).
 
@@ -93,7 +109,9 @@ Le score BREQ-2 comporte 6 items regroupés en trois variables :
 
 *Nombre d'hospitalisations des patients du groupe ETP versus ceux du groupe témoin.*
 
-Une comparaison simple sera faite sur le nombre d'hospitalisation entre les deux groupes & présentée par un Odd-Ratio (package `epiDisplay` [@epid]). Si la répartition du nombre d'hospitalisations est très asymétrique (en particulier s'il y a beaucoup de patients n'ayant pas été hospitalisés) ce nombre sera discrétisé en deux ou trois classes puis les effectifs comparés par un test du $\chi^2$ ou de Fischer. \footnote{Par exemple : \begin{itemize}\item aucune hospitalisation, \item 1 à 2 hospitalisations, \item plus de deux hospitalisations.\end{itemize}}
+Une comparaison simple sera faite sur le nombre d'hospitalisation pendant la première année entre les groupes & présentée par un Odd-Ratio (package `epiDisplay` [@epid]). Si la répartition du nombre d'hospitalisations est très asymétrique (en particulier s'il y a beaucoup de patients n'ayant pas été hospitalisés) ce nombre sera discrétisé en deux ou trois classes puis les effectifs comparés par un test du $\chi^2$ ou de Fischer. \footnote{Par exemple : \begin{itemize}\item aucune hospitalisation, \item 1 à 2 hospitalisations, \item plus de deux hospitalisations.\end{itemize}}
+
+Une analyse de la durée de séjour sera réalisée sur le même principe. On analysera aussi le lieu de séjour (SSR Aincourt vs service de court séjour en première intention) & la durée totale d'hospitalisation sur un an. Une comparaison sera réalisée par un test de \textsc{Wilcoxon}.
 
 
 ## Objectif 5
