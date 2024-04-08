@@ -1,5 +1,6 @@
 ---
 subtitle: "Analyse statistique - V 1.0"
+cache: false
 ---
 
 ::: {.panel-tabset}
@@ -8,11 +9,11 @@ subtitle: "Analyse statistique - V 1.0"
 
 **Évaluation des impacts multidimensionnels des ateliers d’éducation thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité de vie, la santé mentale des patients atteints de BPCO pris en charge par la MPSAT sur le territoire NOVO**
 
-**Investigateur coordonnateur** : Anne-Charlotte TAUVERON -- Hôtel du Département du Val d’Oise – MDPH 
+**Investigateur coordonnateur** : Mme Anne-Charlotte TAUVERON -- Hôtel du Département du Val d’Oise – MDPH 
 
 **Responsable scientifique** : Dr Bruno Philippe -- Service de Pneumologie, réhabilitation respiratoire & SSR Hôpital NOVO (Site Aincourt)
 
-**Chef de projet** : Mme Mathilde WLODARCZY
+**Chef de projet** : Mme Mathilde WLODARCZYK
 
 ```{r}
 #| label: info
@@ -34,6 +35,7 @@ if (expx){system(paste0("rm -f ",classeur))}
 #
 theme_gtsummary_language(language = "fr", decimal.mark = ",")
 options(OutDec = ",")
+#
 load(file = "datas/quest.RData")
 # sessionInfo()
 ```
@@ -61,7 +63,7 @@ formt <- function(tabx, oui = TRUE, comp = "") {
 ```{r}
 #| label: macro-item1
 
-items1 <- function(df = tt, deb, nlabs,expx = expx, classeur = classeur) {
+items1 <- function(df, deb, nlabs,exp = expx, classeur = classeur) {
 nexp <- paste0(deb, "tab")
 tab1 <- df |>
   dplyr::select(c(starts_with(deb))) |>
@@ -73,8 +75,17 @@ tab1 <- df |>
   mutate(Items = factor(Items, labels = bn$Nom[nlabs])) |>
   tbl_cross(row = Items, col = Réponse, margin = NULL,
             percent = "row") |>
-  bold_labels()
-return(tab1)
+  modify_header(label~ str_to_upper(deb)) |> 
+  bold_labels() |> 
+       as_kable_extra() |> 
+       kable_styling(bootstrap_options = "striped", 
+                     font_size = 14, 
+                     fixed_thead = TRUE)
+   if(exp == TRUE){
+ #    tab1 |> 
+ # write.xlsx(nomfich, sheetName = nexp, append = TRUE)
+     }
+   return(tab1)
 }
 ```
 
@@ -98,13 +109,24 @@ df |>
 
 items3 <- function(df, deb, nomfich = classeur, nexpx = expx) {
 nexp <- paste0(deb, "_tab_g")
-df |>
+titre <- paste0(str_to_upper(deb), " selon le groupe")
+tab1 <- df |>
   rowwise() |>
   mutate(tot = sum(c_across(starts_with(deb)))) |>
   tbl_continuous( variable = tot, include = groupe) |>
-  add_p() |>
-  bold_labels() |>
-  pexptabph(exp = expx, nomfich = classeur, nomsheet = nexp)
+  modify_caption(titre) |> 
+  add_p() |> 
+  bold_labels() |> 
+       as_kable_extra() |> 
+       kable_styling(bootstrap_options = "striped", 
+                     font_size = 14, 
+                     fixed_thead = TRUE) 
+    if (expx) {
+      tab1 |>
+        as_tibble() |>
+        write.xlsx(nomfich, sheetName = nexp, append = TRUE)
+    }
+return(tab1)
 }
 ```
 
@@ -118,6 +140,7 @@ L'échantillon comporte `r nrow(tt)` cas pour `r ncol(tt)-2` variables. Il n'y a
 ```{r}
 #| label: tbl-clinique1
 #| tbl-cap: Description démographique
+#| eval: false
 
 tt |> 
   dplyr::select(c(2:14, 96:97, 102)) |> 
@@ -151,7 +174,7 @@ tt |>
                           vaccin_pneumocoque = "Oui"))  |>
   add_p() |>
    formt(oui = FALSE) |> 
-  pexptabph(exp = expx, nomfich = classeur, nomsheet = "efr") |> scroll_box(width = "100%", height = "700px")
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "efr")
 ```
 
 ## Traitements inhalés
@@ -168,8 +191,7 @@ tt |>
                by = groupe)  |>
    add_p() |>
    formt(oui = FALSE) |>
-    pexptabph(exp = expx, nomfich = classeur, nomsheet = "inhale") |> 
-  scroll_box(width = "100%", height = "700px")
+    pexptabph(exp = expx, nomfich = classeur, nomsheet = "inhale") 
 ```
 
 # Critère principal
@@ -191,7 +213,7 @@ numheiq$groupe <- tt$groupe
 
 ```{r}
 #| label: tbl-hda 
-#| tbl-cap: Thème HDA
+#| tbl-cap: "Thème HDA"
 
 items1(tt,"heiq_hda",18:21)
 ```
@@ -207,7 +229,7 @@ items2(tt,"heiq_hda",18:21,"Score HEIQ - Thème HDA")
 
 ```{r}
 #| label: tbl-grheiq-hda
-#| tab-cap: Score HEIQ - Thème HDA selon le groupe
+#| tbl-cap: Score HEIQ - Thème HDA selon le groupe
 
 items3(numheiq,"heiq_hda")
 ```
@@ -232,7 +254,7 @@ items2(tt,"heiq_pael",22:26,"Score HEIQ - Thème PAEL")
 
 ```{r}
 #| label: tbl-grheiq-pael
-#| tab-cap: Score HEIQ - Thème PAEL selon le groupe
+#| tbl-cap: Score HEIQ - Thème PAEL selon le groupe
 
 items3(numheiq,"heiq_pael")
 ```
@@ -257,7 +279,7 @@ items2(tt,"heiq_ed",27:32,"Score HEIQ - Thème ED")
 
 ```{r}
 #| label: tbl-grheiq-ed
-#| tab-cap: Score HEIQ - Thème ED selon le groupe
+#| tbl-cap: Score HEIQ - Thème ED selon le groupe
 
 items3(numheiq,"heiq_ed")
 ```
@@ -282,7 +304,7 @@ items2(tt,"heiq_smi",33:38,"Score HEIQ - Thème SMI")
 
 ```{r}
 #| label: tbl-grheiq-smi
-#| tab-cap: Score HEIQ - Thème SMI selon le groupe
+#| tbl-cap: Score HEIQ - Thème SMI selon le groupe
 
 
 items3(numheiq,"heiq_smi")
@@ -309,7 +331,7 @@ items2(tt,"heiq_caa",39:43,"Score HEIQ - Thème CAA")
 
 ```{r}
 #| label: tbl-grheiq-caa
-#| tab-cap: Score HEIQ - Thème CAA selon le groupe
+#| tbl-cap: Score HEIQ - Thème CAA selon le groupe
 
 items3(numheiq,"heiq_caa")
 ```
@@ -337,7 +359,7 @@ items2(tt,deb,lim,"Score HEIQ - Thème STA")
 
 ```{r}
 #| label: tbl-grheiq-sta
-#| tab-cap: Score HEIQ - Thème STA selon le groupe
+#| tbl-cap: Score HEIQ - Thème STA selon le groupe
 
 items3(numheiq, deb)
 ```
@@ -365,7 +387,7 @@ items2(tt,deb,lim,"Score HEIQ - Thème SIS")
 
 ```{r}
 #| label: tbl-grheiq-sis
-#| tab-cap: Score HEIQ - Thème SIS selon le groupe
+#| tbl-cap: Score HEIQ - Thème SIS selon le groupe
 
 items3(numheiq, deb)
 ```
@@ -393,7 +415,7 @@ items2(tt,deb,lim,"Score HEIQ - Thème HSN")
 
 ```{r}
 #| label: tbl-grheiq-hsn
-#| tab-cap: Score HEIQ - Thème HSN selon le groupe
+#| tbl-cap: Score HEIQ - Thème HSN selon le groupe
 
 items3(numheiq, deb)
 ```
@@ -519,7 +541,7 @@ items2(tt,deb,lim,"Score VQAA")
 
 
 #| label: tbl-vq11tot
-#| tab-cap: Score VQ11 vs groupe
+#| tbl-cap: Score VQ11 vs groupe
 zz <- tt |> 
   dplyr::select(c(starts_with("vq11"))) |> 
   mutate_all(as.numeric)
@@ -678,7 +700,7 @@ had$groupe <- tt$groupe
 
 ```{r}
 #| label: tbl-had-anx
-#| tab-cap: "Score d'anxiété (HAD) par groupe"
+#| tbl-cap: "Score d'anxiété (HAD) par groupe"
 
 tbl_cross(had, groupe, Anxiété, percent = "row", margin = "row") %>%
 add_p() %>%
@@ -688,7 +710,7 @@ bold_labels() |>
 
 ```{r}
 #| label: tbl-had-dep
-#| tab-cap: "Score de dépression (HAD) par groupe"
+#| tbl-cap: "Score de dépression (HAD) par groupe"
 
 tbl_cross(had, groupe, Dépression, percent = "row", margin = "row") %>%
 add_p() %>%
@@ -722,7 +744,7 @@ items2(tt,deb,lim,"Score BREQ 2")
 
 
 #| label: tbl-breq-2tot
-#| tab-cap: Score BREQ 2 vs groupe
+#| tbl-cap: Score BREQ 2 vs groupe
 zz <- tt |> 
   dplyr::select(c(starts_with(deb))) |> 
   mutate_all(as.numeric)
