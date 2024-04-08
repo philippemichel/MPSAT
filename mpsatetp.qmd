@@ -1,0 +1,767 @@
+---
+subtitle: "Analyse statistique - V 1.0"
+---
+
+::: {.panel-tabset}
+
+# Introduction
+
+**Évaluation des impacts multidimensionnels des ateliers d’éducation thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité de vie, la santé mentale des patients atteints de BPCO pris en charge par la MPSAT sur le territoire NOVO**
+
+**Investigateur coordonnateur** : Anne-Charlotte TAUVERON -- Hôtel du Département du Val d’Oise – MDPH 
+
+**Responsable scientifique** : Dr Bruno Philippe -- Service de Pneumologie, réhabilitation respiratoire & SSR Hôpital NOVO (Site Aincourt)
+
+**Chef de projet** : Mme Mathilde WLODARCZY
+
+```{r}
+#| label: info
+
+# rm(list=ls())
+library(baseph)
+library(tidyverse)
+library(kableExtra)
+library(scales)
+library(gtsummary)
+library(labelled)
+library(ggstats)
+library(DataExplorer)
+library(xlsx)
+
+expx <- FALSE
+classeur <- "mpsatetp1.xlsx"
+if (expx){system(paste0("rm -f ",classeur))}
+#
+theme_gtsummary_language(language = "fr", decimal.mark = ",")
+options(OutDec = ",")
+load(file = "datas/quest.RData")
+# sessionInfo()
+```
+
+
+```{r}
+#| label: macrotab
+
+formt <- function(tabx, oui = TRUE, comp = "") {
+  if (oui) {
+    cpt = 'Pour les données en oui/non seul le résultat pour oui est présenté'
+  }
+  else{
+    cpt = ''
+  }
+#  cpt = paste0(cpt, ". ", comp)
+  tabx |>
+ modify_footnote(update = everything() ~ cpt) |>
+    add_n() |>
+    add_overall() |> 
+    bold_labels()
+}
+```
+
+```{r}
+#| label: macro-item1
+
+items1 <- function(df = tt, deb, nlabs,expx = expx, classeur = classeur) {
+nexp <- paste0(deb, "tab")
+tab1 <- df |>
+  dplyr::select(c(starts_with(deb))) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Items",
+    values_to = "Réponse"
+  ) |>
+  mutate(Items = factor(Items, labels = bn$Nom[nlabs])) |>
+  tbl_cross(row = Items, col = Réponse, margin = NULL,
+            percent = "row") |>
+  bold_labels()
+return(tab1)
+}
+```
+
+```{r}
+#| label: macro-item2
+
+items2 <- function(df = tt, deb, nlabs, tit){
+df |>
+  dplyr::select(c(starts_with(deb))) |>
+  rename_with(~ bn$Nom[nlabs]) |>
+  gglikert() +
+  labs(title = tit) +
+  scale_y_discrete(labels = label_wrap(40))
+}
+```
+
+```{r}
+#| label: macro-item3
+
+# Additionne les items d'un thème puis comparaison selon groupe
+
+items3 <- function(df, deb, nomfich = classeur, nexpx = expx) {
+nexp <- paste0(deb, "_tab_g")
+df |>
+  rowwise() |>
+  mutate(tot = sum(c_across(starts_with(deb)))) |>
+  tbl_continuous( variable = tot, include = groupe) |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = nexp)
+}
+```
+
+# Description de la population
+
+L'échantillon comporte `r nrow(tt)` cas pour `r ncol(tt)-2` variables. Il n'y a aucune donnée manquante pour les divers scores ou échelles.
+
+
+## Démographie
+
+```{r}
+#| label: tbl-clinique1
+#| tbl-cap: Description démographique
+
+tt |> 
+  dplyr::select(c(2:14, 96:97, 102)) |> 
+  tbl_summary( missing = "no",
+               by = groupe,
+               value = list(tabac = "Oui",
+                          vaccin_grippe = "Oui",
+                          vaccin_covid = "Oui",
+                          vaccin_pneumocoque = "Oui"))  |>
+   formt(oui = TRUE) |> 
+  add_p() |>
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "demo") |> 
+  scroll_box(width = "100%", height = "700px")
+```
+
+Les différences entre les groupes (poids, situation familiale...) semblent relever du hasard. Il était prévisible d'avoir ce type de résultat vu la petite taille de l'échantillon.
+
+## EFR
+
+```{r}
+#| label: tbl-efr
+#| tbl-cap: EFR
+
+tt |> 
+  dplyr::select(c(99:101,96)) |> 
+  tbl_summary( missing = "no",
+               by = groupe,
+               value = list(tabac = "Oui",
+                          vaccin_grippe = "Oui",
+                          vaccin_covid = "Oui",
+                          vaccin_pneumocoque = "Oui"))  |>
+  add_p() |>
+   formt(oui = FALSE) |> 
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "efr") |> scroll_box(width = "100%", height = "700px")
+```
+
+## Traitements inhalés
+
+```{r}
+#| label: tbl-inhale
+#| tbl-cap: Traitements inhalés
+
+tt |> 
+  dplyr::select(c(103:105,96)) |>
+  pivot_longer(cols = c(1:3), names_to = "tt", values_to = "traitement") |> 
+  dplyr::select(! tt) |> 
+  tbl_summary( missing = "no",
+               by = groupe)  |>
+   add_p() |>
+   formt(oui = FALSE) |>
+    pexptabph(exp = expx, nomfich = classeur, nomsheet = "inhale") |> 
+  scroll_box(width = "100%", height = "700px")
+```
+
+# Critère principal
+
+*L’impact global des ateliers d’ETP sera évalué à l’aide du score global du questionnaire validé en langue française*
+
+Le score HEIQ est divisé en plusieurs thèmes qui vont être présentés un à un avant d'analyser le score final.
+
+```{r}
+#| label: num-heiq
+
+numheiq <- tt |> 
+  dplyr::select(c(starts_with("heiq"))) |> 
+  mutate_all(as.numeric)
+numheiq$groupe <- tt$groupe
+```
+
+## Thème HDA
+
+```{r}
+#| label: tbl-hda 
+#| tbl-cap: Thème HDA
+
+items1(tt,"heiq_hda",18:21)
+```
+
+```{r}
+#| label: fig-heiq-hda
+#| fig-cap: Score HEIQ - Thème HDA
+
+items2(tt,"heiq_hda",18:21,"Score HEIQ - Thème HDA")
+```
+
+### Comparaison entre groupes
+
+```{r}
+#| label: tbl-grheiq-hda
+#| tab-cap: Score HEIQ - Thème HDA selon le groupe
+
+items3(numheiq,"heiq_hda")
+```
+
+## Thème PAEL
+
+```{r}
+#| label: tbl-pael 
+#| tbl-cap: Thème PAEL
+
+items1(tt,"heiq_pael",22:26)
+```
+
+```{r}
+#| label: fig-heiq-pael
+#| fig-cap: Score HEIQ - Thème PAEL
+
+items2(tt,"heiq_pael",22:26,"Score HEIQ - Thème PAEL")
+```
+
+### Comparaison entre groupes
+
+```{r}
+#| label: tbl-grheiq-pael
+#| tab-cap: Score HEIQ - Thème PAEL selon le groupe
+
+items3(numheiq,"heiq_pael")
+```
+
+## Thème ED
+
+```{r}
+#| label: tbl-ed
+#| tbl-cap: Thème ED
+
+items1(tt,"heiq_ed",27:32)
+```
+
+```{r}
+#| label: fig-heiq-ed
+#| fig-cap: Score HEIQ - Thème ED
+
+items2(tt,"heiq_ed",27:32,"Score HEIQ - Thème ED")
+```
+
+### Comparaison entre groupes
+
+```{r}
+#| label: tbl-grheiq-ed
+#| tab-cap: Score HEIQ - Thème ED selon le groupe
+
+items3(numheiq,"heiq_ed")
+```
+
+## Thème SMI
+
+```{r}
+#| label: tbl-smi
+#| tbl-cap: Thème SMI
+
+items1(tt,"heiq_smi",33:38)
+```
+
+```{r}
+#| label: fig-heiq-smi
+#| fig-cap: Score HEIQ - Thème SMID
+
+items2(tt,"heiq_smi",33:38,"Score HEIQ - Thème SMI")
+```
+
+### Comparaison entre groupes
+
+```{r}
+#| label: tbl-grheiq-smi
+#| tab-cap: Score HEIQ - Thème SMI selon le groupe
+
+
+items3(numheiq,"heiq_smi")
+```
+
+## Thème CAA
+
+```{r}
+#| label: tbl-caa
+#| tbl-cap: Thème CAA
+
+
+items1(tt,"heiq_caa",39:43)
+```
+
+```{r}
+#| label: fig-heiq-caa
+#| fig-cap: Score HEIQ - Thème CAA
+
+items2(tt,"heiq_caa",39:43,"Score HEIQ - Thème CAA")
+```
+
+### Comparaison entre groupes
+
+```{r}
+#| label: tbl-grheiq-caa
+#| tab-cap: Score HEIQ - Thème CAA selon le groupe
+
+items3(numheiq,"heiq_caa")
+```
+
+## Thème STA
+
+```{r}
+#| label: tbl-sta
+#| tbl-cap: Thème STA
+
+deb <- "heiq_sta"
+lim <- 44:47
+
+items1(tt,deb,lim)
+```
+
+```{r}
+#| label: fig-heiq-sta
+#| fig-cap: Score HEIQ - Thème STA
+
+items2(tt,deb,lim,"Score HEIQ - Thème STA")
+```
+
+### Comparaison entre groupes
+
+```{r}
+#| label: tbl-grheiq-sta
+#| tab-cap: Score HEIQ - Thème STA selon le groupe
+
+items3(numheiq, deb)
+```
+
+## Thème SIS
+
+```{r}
+#| label: tbl-sis
+#| tbl-cap: Thème SIS
+
+deb <- "heiq_sis"
+lim <- 48:52
+
+items1(tt,deb,lim)
+```
+
+```{r}
+#| label: fig-heiq-sis
+#| fig-cap: Score HEIQ - Thème SIS
+
+items2(tt,deb,lim,"Score HEIQ - Thème SIS")
+```
+
+### Comparaison entre groupes
+
+```{r}
+#| label: tbl-grheiq-sis
+#| tab-cap: Score HEIQ - Thème SIS selon le groupe
+
+items3(numheiq, deb)
+```
+
+## Thème HSN
+
+```{r}
+#| label: tbl-hsn
+#| tbl-cap: Thème HSN
+#| 
+deb <- "heiq_hsn"
+lim <- 53:57
+
+items1(tt,deb,lim)
+```
+
+```{r}
+#| label: fig-heiq-hsn
+#| fig-cap: Score HEIQ - Thème HSN
+
+items2(tt,deb,lim,"Score HEIQ - Thème HSN")
+```
+
+### Comparaison entre groupes
+
+```{r}
+#| label: tbl-grheiq-hsn
+#| tab-cap: Score HEIQ - Thème HSN selon le groupe
+
+items3(numheiq, deb)
+```
+
+
+## Analyse Globale
+
+On additionne les résultats des thèmes pour obtenir le score total.
+
+L'analyse sera faite selon trois regroupements :  
+
+- `ETP` vs `Témoin` vs `Témoin avec RR` (trois groupes)
+-  En intention de traiter : `ETP` vs `Témoin` + `Témoin avec RR`  (deux groupes)
+- En per protocole : `ETP` + `Témoin avec RR` vs `Témoin` (deux groupes)
+
+Puis on recherchera des facteurs démographiques ou autres qui pourraient entrainer des différences. 
+
+
+```{r}
+### Analyse sur trois groupes
+
+#| label: tbl-heiqtot
+#| tbl-cap: "Score HEIQ total - 3 groupes"
+
+items3(numheiq, "heiq")
+```
+
+## Analyse en intention de traiter
+
+On compare le groupe `ETP` au groupe `témoin`.
+
+```{r}
+#| label: tbl-heiqitt
+#| tbl-cap: "Score HEIQ total - ITT"
+
+## Recodage de numheiq$groupe en numheiq$inttrait
+numheiq$inttrait <- numheiq$groupe %>%
+  fct_recode(
+    "Témoin" = "Témoin avec RR"
+  )
+
+
+numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(starts_with("heiq")))) |>
+  tbl_continuous( variable = tot, include = inttrait) |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq-int_trait")
+```
+
+### Analyse en per protocole
+
+On compare les groupes ayant suivi l'ETP ( groupes `ETP` & `Témoin avec RR`) au groupe `Témoin`.
+
+```{r}
+#| label: tbl-heiqperprot
+#| tbl-cap: "Score HEIQ total - ITT"
+
+## Recodage de numheiq$groupe en numheiq$perprot
+numheiq$perprot <- numheiq$groupe %>%
+  fct_recode(
+    "ETP" = "Témoin avec RR"
+  )
+
+numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(starts_with("heiq")))) |>
+  tbl_continuous( variable = tot, include = perprot) |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq-per_prot")
+```
+
+### Analyse des facteurs associés
+
+```{r}
+#| label: tbl-heiqassocdemo
+#| tbl-cap: "Facteurs démographiques et score HEIQ"
+
+numheiq <- numheiq |> 
+rowwise() |>
+  mutate(tot = sum(c_across(starts_with("heiq"))))
+
+
+tt$totheiq <- numheiq$tot
+
+tt |> 
+  tbl_continuous(totheiq, include = c(2,3,6:14,97,102)) |> 
+  add_p() |> 
+  bold_labels() |>
+    pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq_fact") |> 
+  scroll_box(width = "100%", height = "700px")
+```
+
+Aucun critère démographique n'est associé au score HEIQ & les valeurs élevées des p-values rendent illusoire d'espérer un résultat sur une analyse en régression.
+
+# Critères secondaires
+
+## Qualité de vie
+*La qualité de vie des patients du groupe ETP versus ceux du groupe témoin sera évaluée à l’aide du questionnaire validé VQ11.*
+
+```{r}
+#| label: tbl-vq11
+#| tbl-cap: Score VQ11
+#| 
+deb <- "vq11"
+lim <- 58:68
+
+items1(tt,deb,lim)
+```
+
+```{r}
+#| label: fig-vq11
+#| fig-cap: Score VQ11
+
+items2(tt,deb,lim,"Score VQAA")
+```
+
+### Comparaison entre groupes
+
+```{r}
+
+
+#| label: tbl-vq11tot
+#| tab-cap: Score VQ11 vs groupe
+zz <- tt |> 
+  dplyr::select(c(starts_with("vq11"))) |> 
+  mutate_all(as.numeric)
+zz$groupe <- tt$groupe
+items3(zz,deb)
+rm(zz)
+```
+
+Pas de différence retrouvée pour la qualité de vie entre les groupes. 
+
+## Critères secondaires
+*Les niveaux d’anxiété et de dépression des patients du groupe ETP versus ceux du groupe témoin seront évalués grâce au questionnaire validé HAD*
+
+```{r}
+#| label: had-prep
+
+zz <- tt[,70:83]
+
+## Recodage de zz$had_1 en zz$had_1_rec
+zz$had_1_rec <- zz$had_1 %>%
+  fct_recode(
+    "3" = "De temps en temps ",
+    "0" = "Jamais",
+    "2" = "Souvent "
+  )
+
+    ## Recodage de zz$had_3 en zz$had_3_rec
+zz$had_3_rec <- zz$had_3 %>%
+  fct_recode(
+    "2" = "Oui, mais ce n’est pas trop grave ",
+    "3" = "Oui, très nettement ",
+    "0" = "Pas du tout",
+    "1" = "Un peu, mais cela ne m’inquiète pas "
+  )
+
+## Recodage de zz$had_2 en zz$had_2_rec
+zz$had_2_rec <- zz$had_2 %>%
+  fct_recode(
+    "0" = "Oui, tout autant ",
+    "1" = "Pas autant ",
+    "2" = "Un peu seulement "
+  )
+## Recodage de zz$had_4 en zz$had_4_rec
+zz$had_4_rec <- zz$had_4 %>%
+  fct_recode(
+    "0" = "Autant que par le passé ",
+    "1" = "Plus autant qu’avant ",
+    "3" = "Plus du tout",
+    "2" = "Vraiment moins qu’avant "
+  )
+## Recodage de zz$had_5 en zz$had_5_rec
+zz$had_5_rec <- zz$had_5 %>%
+  fct_recode(
+    "2" = "Assez souvent ",
+    "1" = "Occasionnellement ",
+    "0" = "Très occasionnellement",
+    "3" = "Très souvent "
+    )
+## Recodage de zz$had_9 en zz$had_9_rec
+zz$had_9_rec <- zz$had_9 %>%
+  fct_recode(
+    "2" = "Assez souvent ",
+    "0" = "Jamais ",
+    "1" = "Parfois ",
+    "3" = "Très souvent"
+  )
+## Recodage de zz$had_6 en zz$had_6_rec
+zz$had_6_rec <- zz$had_6 %>%
+  fct_recode(
+    "1" = "Assez souvent ",
+    "0" = "La plupart du temps",
+    "2" = "Rarement "
+  )
+## Recodage de zz$had_7 en zz$had_7_rec
+zz$had_7_rec <- zz$had_7 %>%
+  fct_recode(
+    "3" = "Jamais",
+    "1" = "Oui, en général ",
+    "0" = "Oui, quoi qu’il arrive ",
+    "2" = "Rarement "
+  )
+## Recodage de zz$had_8 en zz$had_8_rec
+zz$had_8_rec <- zz$had_8 %>%
+  fct_recode(
+    "0" = "Jamais",
+    "1" = "Parfois ",
+    "3" = "Presque toujours ",
+    "2" = "Très souvent "
+  )
+## Recodage de zz$had_10 en zz$had_10_rec
+zz$had_10_rec <- zz$had_10 %>%
+  fct_recode(
+    "1" = "Il se peut que je n’y fasse plus autant attention",
+    "0" = "J’y prête autant d’attention que par le passé",
+    "2" = "Je n’y accorde pas autant d’attention que je devrais",
+    "3" = "Plus du tout "
+  )
+## Recodage de zz$had_11 en zz$had_11_rec
+zz$had_11_rec <- zz$had_11 %>%
+  fct_recode(
+    "3" = "Oui, c’est tout à fait le cas ",
+    "0" = "Pas du tout",
+    "1" = "Pas tellement",
+    "1" = "Pas tellement ",
+    "2" = "Un peu",
+    "2" = "Un peu "
+  )
+## Recodage de zz$had_12 en zz$had_12_rec
+zz$had_12_rec <- zz$had_12 %>%
+  fct_recode(
+    "0" = "Autant qu’avant ",
+    "2" = "Bien moins qu’avant ",
+    "1" = "Un peu moins qu’avant "
+  )
+## Recodage de zz$had_13 en zz$had_13_rec
+zz$had_13_rec <- zz$had_13 %>%
+  fct_recode(
+    "2" = "Assez souvent ",
+    "0" = "Jamais",
+    "1" = "Pas très souvent ",
+    "3" = "Vraiment très souvent "
+  )
+## Recodage de zz$had_14 en zz$had_14_rec
+zz$had_14_rec <- zz$had_14 %>%
+  fct_recode(
+    "1" = "Parfois ",
+    "2" = "Rarement ",
+    "0" = "Souvent "
+  )
+#
+had <- zz %>%
+  select(ends_with("rec")) %>%
+  mutate_all(as.character) |>
+  mutate_all(as.numeric) |>
+#
+rowwise() %>%
+  mutate(hadA = sum(across(c(1,3,5,7,9,11,13)))) |>
+mutate(Anxiété = cut(hadA,
+  include.lowest = TRUE,
+  right = FALSE,
+  dig.lab = 4,
+  breaks = c(0, 8,11, 15),
+  labels = c("absence de symptomatologie", "symptomatologie douteuse ", "symptomatologie certaine"))
+) |> 
+  mutate(hadD = sum(across(c(2,4,6,8,10,12,14)))) |> 
+    mutate(Dépression = cut(hadD,
+                         include.lowest = TRUE,
+                         right = FALSE,
+                         dig.lab = 4,
+                         breaks = c(0, 8,11, 15),
+                         labels = c("absence de symptomatologie", "symptomatologie douteuse ", "symptomatologie certaine"))
+    )
+
+had$groupe <- tt$groupe
+```
+
+```{r}
+#| label: tbl-had-anx
+#| tab-cap: "Score d'anxiété (HAD) par groupe"
+
+tbl_cross(had, groupe, Anxiété, percent = "row", margin = "row") %>%
+add_p() %>%
+bold_labels() |> 
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "had-anx")
+```
+
+```{r}
+#| label: tbl-had-dep
+#| tab-cap: "Score de dépression (HAD) par groupe"
+
+tbl_cross(had, groupe, Dépression, percent = "row", margin = "row") %>%
+add_p() %>%
+bold_labels() |> 
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "had-dep")
+```
+
+## Critère 3
+*La motivation envers l'activité physique pratiquée durant les temps libres sera évaluée par le questionnaire BREQ-2 version courte.*
+
+```{r}
+#| label: tbl-breq-2
+#| tbl-cap: Score BREQ 2
+#| 
+deb <- "breq"
+lim <- 83:88
+
+items1(tt,deb,lim)
+```
+
+```{r}
+#| label: fig-breq-2
+#| fig-cap: Score BREQ 2
+
+items2(tt,deb,lim,"Score BREQ 2")
+```
+
+### Comparaison entre groupes
+
+```{r}
+
+
+#| label: tbl-breq-2tot
+#| tab-cap: Score BREQ 2 vs groupe
+zz <- tt |> 
+  dplyr::select(c(starts_with(deb))) |> 
+  mutate_all(as.numeric)
+zz$groupe <- tt$groupe
+items3(zz,deb)
+rm(zz)
+```
+
+Pas de différence retrouvée pour la qualité de vie entre les groupes. 
+
+## Critère 4
+
+En attente
+
+## Critère 5
+*La perception et le ressenti des patients du groupe ETP versus ceux du groupe témoin concernant ces ateliers seront évalués grâce à un questionnaire sur le suivi et la satisfaction des patients*
+
+```{r}
+#| label: tbl-satisf
+#| tbl-cap: Questionnaire de satisfaction
+
+tt |> 
+  dplyr::select(c(90:96)) |> 
+  tbl_summary( missing = "no",
+               by = groupe,
+               value = list(satisfaction_1 = "Oui",
+                          satisfaction_4 = "Oui",
+                          satisfaction_5 = "Oui",
+                          satisfaction_6 = "Oui")) |>
+   formt(oui = TRUE) |> 
+  add_p() |>
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "demo") |> 
+  scroll_box(width = "100%", height = "700px")
+```
+
+# Technique {.appendix}
+
+Les données discrètes ont été présentés en pourcentage puis comparées par le test du $\Chi^2$ de Pearson avec correction de Yates si nécessaire. Les données numériques ont été présentées par leur médiane & les quartiles puis comparées par le test no paramétrique de Wilcoxon.
+
+L'analyse statistique a été réalisée avec le logiciel **R** [@rstat] & diverses librairies en particulier celles du `tidyverse` [@tidy] & `baseph` [@baseph].
+
+:::

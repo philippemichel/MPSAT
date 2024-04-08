@@ -1,57 +1,24 @@
 title: "MPSAT-ETP"
 lang: fr
+language:
+  title-block-author-single: "Auteur"
 author:
-  - name: "D\\textsuperscript{r} Philippe \\textsc{Michel}"
+  - name: "D<up>r</up> Philippe MICHEL"
     affiliations:
-      name: "Hôpital \\textsc{novo}"
+      name: "USRC - Hôpital NOVO"
       department: "Unité de Soutien à la Recherche Clinique"
 format:
- titlepage-pdf:
-  titlepage: bg-image
-  titlepage-bg-image: "novo_usrc.png"
-  logo-space-after: "0\\baselineskip"
-  documentclass: scrreprt
-  number-sections: true
-  titlepage-footer: "Anne-Charlotte \\textsc{Tauveron} -- Hôtel du Département du Val d’Oise – MDPH \\newline Dr Bruno \\textsc{Philippe} -- Service de Pneumologie, réhabilitation respiratoire & SSR Hôpital \\textsc{novo} (Site Aincourt)\\newline \\newline Chef de projet : M\\up{me} Mathilde \\textsc{Wlodarczyk}\\newline \\newline Évaluation des impacts multidimensionnels des ateliers d’éducation thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité de vie, la santé mentale des patients atteints de \\textsc{bpco} pris en charge par la \\textsc{mpsat} sur le territoire \\textsc{novo}  \\newline \\newline \\today"
-titlepage-theme:
-  title-fontstyle: ["Huge", "bfseries"]
-  title-color: novo
-  subtitle-color: novo
-  subtitle-fontstyle: ["huge"]
-  logo-size: "0.2\\textheight"
-  vrule-width: "0.1cm"
-  vrule-color: novo
-include-in-header:
-   text: |
-    \definecolor{novo}{HTML}{27484b}
-    \usepackage{siunitx}
-    \AddToHook{env/tabular/before}{\addfontfeatures{Numbers=Monospaced}}
-    \AddToHook{env/longtable/before}{\addfontfeatures{Numbers=Monospaced}}
-    \usepackage{alphabeta}
-    \usepackage{marginnote}
-    \usepackage[math=arsenal+kpsans]{arsenal}
-    \renewcommand*{\marginfont}{\footnotesize}
-df-print : kable
-jss-pdf:
-  keep-tex: true
-pdf-engine: lualatex
-keep-tex: true
-number-sections: true
-toc: true
-lof: false
-lot: false
-fig-cap-location: bottom
-tbl-cap-location: top
-classoption: [french, fontsize=10pt]
-papersize: a4
-editor: source
+  html:
+    theme: minty
+    code-fold: true
+    html-math-method: katex
+    highlight-style: ayu
+    page-layout: full
+    toc: true
+    number-sections: true
+    smooth-scroll: true
 bibliography: stat.bib
-cite-method: biblatex
-csl: jama.csl
-reference-location: margin
-citation-location: margin
 license: "MIT"
-echo: false
 warning: false
 message: false
 cache: true

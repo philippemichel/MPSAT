@@ -13,8 +13,9 @@ README_files/
 .quarto/
 /.quarto/
 *cache*
-
 *_DOC*
-
 2_DATA
 3_STAT/
+datas
+README.log
+README.aux
