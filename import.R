@@ -58,8 +58,15 @@ mutate(satisfaction_2 = fct_relevel(satisfaction_2,
     "Plus"))
 #
 tt <- left_join(tt, mp, by = "id")
+#
+dd <- read_ods("datas/MPSAT-ETP_dates.ods") |>
+  clean_names() |>
+  mutate(across(starts_with("date"),mdy )) |>
+  mutate(across(starts_with("date_hosp"), function(x) as.numeric(x - date_integration))) |>
+  mutate(across(starts_with("date_hosp"), function(x) as.factor(ifelse((x>365 | x<0),"non","oui"))))
+#
 
-save(tt, bn, file = "datas/quest.RData")
+save(tt, bn, dd, file = "datas/quest.RData")
 }
 
 load(file = "datas/quest.RData")

@@ -1,6 +1,6 @@
 ---
 subtitle: "Analyse statistique - V 1.0"
-cache: false
+cache: true
 ---
 
 ::: {.panel-tabset}
@@ -18,16 +18,19 @@ cache: false
 ```{r}
 #| label: info
 
-# rm(list=ls())
+ rm(list=ls())
 library(baseph)
 library(tidyverse)
 library(kableExtra)
 library(scales)
+library(forestmodel)
 library(gtsummary)
+library(epiDisplay)
 library(labelled)
 library(ggstats)
 library(DataExplorer)
 library(xlsx)
+library(lubridate)
 
 expx <- FALSE
 classeur <- "mpsatetp1.xlsx"
@@ -46,7 +49,7 @@ load(file = "datas/quest.RData")
 
 formt <- function(tabx, oui = TRUE, comp = "") {
   if (oui) {
-    cpt = 'Pour les données en oui/non seul le résultat pour oui est présenté'
+    cpt = 'Pour les données en oui/non seul le résultat pour oui a été présenté'
   }
   else{
     cpt = ''
@@ -130,6 +133,45 @@ return(tab1)
 }
 ```
 
+```{r}
+#| label: macro-item4
+
+# Analyse selon les groupes en linéaire. 
+
+item4 <- function(df,deb, grp = groupe, tit1 = "",tit2 = ""){
+zz <- df|>
+  rowwise() |>
+  mutate(tot = sum(c_across(starts_with(deb)))) |> 
+  mutate(ggg = {{grp}})
+
+ll <- lm(tot ~ ggg, data = zz)
+panels <- list(
+  list(width = 0.03),
+  list(width = 0.1, display = ~variable, fontface = "bold", heading = tit1),
+  list(width = 0.1, display = ~level, heading = tit2),
+  list(width = 0.05, display = ~n, hjust = 1, heading = "n"),
+  list(width = 0.03, item = "vline", hjust = 0.5),
+  list(
+    width = 0.55, item = "forest", hjust = 0.5, heading = "Odd Ratio", linetype = "dashed",
+    line_x = 0
+  ),
+  list(width = 0.03, item = "vline", hjust = 0.5),
+  list(width = 0.12, display = ~ ifelse(reference, "Reference", sprintf(
+    "%0.2f (%0.2f, %0.2f)",
+    trans(estimate), trans(conf.low), trans(conf.high)
+  )), display_na = NA),
+  list(
+    width = 0.05,
+    display = ~ ifelse(reference, "", format.pval(p.value, digits = 1, eps = 0.001)),
+    display_na = NA, hjust = 1, heading = "p"
+  ),
+  list(width = 0.03)
+)
+forest_model(ll, panels)
+}
+```
+
+
 # Description de la population
 
 L'échantillon comporte `r nrow(tt)` cas pour `r ncol(tt)-2` variables. Il n'y a aucune donnée manquante pour les divers scores ou échelles.
@@ -140,7 +182,7 @@ L'échantillon comporte `r nrow(tt)` cas pour `r ncol(tt)-2` variables. Il n'y a
 ```{r}
 #| label: tbl-clinique1
 #| tbl-cap: Description démographique
-#| eval: false
+#| eval: true
 
 tt |> 
   dplyr::select(c(2:14, 96:97, 102)) |> 
@@ -196,9 +238,9 @@ tt |>
 
 # Critère principal
 
-*L’impact global des ateliers d’ETP sera évalué à l’aide du score global du questionnaire validé en langue française*
+*L’impact global des ateliers d’ETP a été évalué à l’aide du score global du questionnaire validé en langue française*
 
-Le score HEIQ est divisé en plusieurs thèmes qui vont être présentés un à un avant d'analyser le score final.
+Le score HEIQ a été divisé en plusieurs thèmes qui vont être présentés un à un avant d'analyser le score final. l'analyse linéaire avec tracé du graphique en *arbre de noël* ne sera réalisée que si une différence significative est mise en évidence. 
 
 ```{r}
 #| label: num-heiq
@@ -215,14 +257,17 @@ numheiq$groupe <- tt$groupe
 #| label: tbl-hda 
 #| tbl-cap: "Thème HDA"
 
-items1(tt,"heiq_hda",18:21)
+deb <- "heiq_hda"
+lim <- 18:21
+
+items1(tt,deb, lim)
 ```
 
 ```{r}
 #| label: fig-heiq-hda
 #| fig-cap: Score HEIQ - Thème HDA
 
-items2(tt,"heiq_hda",18:21,"Score HEIQ - Thème HDA")
+items2(tt,deb, lim,"Score HEIQ - Thème HDA")
 ```
 
 ### Comparaison entre groupes
@@ -231,8 +276,17 @@ items2(tt,"heiq_hda",18:21,"Score HEIQ - Thème HDA")
 #| label: tbl-grheiq-hda
 #| tbl-cap: Score HEIQ - Thème HDA selon le groupe
 
-items3(numheiq,"heiq_hda")
+items3(numheiq, deb)
 ```
+
+```{r}
+#| label: fig-grheiq-hda
+#| fig-cap: Score HEIQ - Thème HDA selon le groupe
+
+item4(numheiq, deb, tit1 = "HEIQ", tit2 = "Score HDA")
+```
+
+
 
 ## Thème PAEL
 
@@ -240,14 +294,17 @@ items3(numheiq,"heiq_hda")
 #| label: tbl-pael 
 #| tbl-cap: Thème PAEL
 
-items1(tt,"heiq_pael",22:26)
+deb <- "heiq_pael"
+lim <- 22:26
+
+items1(tt,deb, lim)
 ```
 
 ```{r}
 #| label: fig-heiq-pael
 #| fig-cap: Score HEIQ - Thème PAEL
 
-items2(tt,"heiq_pael",22:26,"Score HEIQ - Thème PAEL")
+items2(tt,deb, lim, "Score HEIQ - Thème PAEL")
 ```
 
 ### Comparaison entre groupes
@@ -256,8 +313,18 @@ items2(tt,"heiq_pael",22:26,"Score HEIQ - Thème PAEL")
 #| label: tbl-grheiq-pael
 #| tbl-cap: Score HEIQ - Thème PAEL selon le groupe
 
-items3(numheiq,"heiq_pael")
+items3(numheiq,deb)
 ```
+
+```{r}
+#| label: fig-grheiq-pael
+#| fig-cap: Score HEIQ - Thème PAEL selon le groupe
+
+item4(numheiq, deb, tit1 = "HEIQ", tit2 = "Score PAEL")
+```
+
+
+
 
 ## Thème ED
 
@@ -265,14 +332,17 @@ items3(numheiq,"heiq_pael")
 #| label: tbl-ed
 #| tbl-cap: Thème ED
 
-items1(tt,"heiq_ed",27:32)
+deb <- "heiq_ed"
+lim <- 27:32
+
+items1(tt,deb, lim)
 ```
 
 ```{r}
 #| label: fig-heiq-ed
 #| fig-cap: Score HEIQ - Thème ED
 
-items2(tt,"heiq_ed",27:32,"Score HEIQ - Thème ED")
+items2(tt,deb, lim, "Score HEIQ - Thème ED")
 ```
 
 ### Comparaison entre groupes
@@ -281,7 +351,7 @@ items2(tt,"heiq_ed",27:32,"Score HEIQ - Thème ED")
 #| label: tbl-grheiq-ed
 #| tbl-cap: Score HEIQ - Thème ED selon le groupe
 
-items3(numheiq,"heiq_ed")
+items3(numheiq,deb)
 ```
 
 ## Thème SMI
@@ -290,14 +360,17 @@ items3(numheiq,"heiq_ed")
 #| label: tbl-smi
 #| tbl-cap: Thème SMI
 
-items1(tt,"heiq_smi",33:38)
+deb <- "heiq_smi"
+lim <- 33:38
+
+items1(tt,deb, lim)
 ```
 
 ```{r}
 #| label: fig-heiq-smi
 #| fig-cap: Score HEIQ - Thème SMID
 
-items2(tt,"heiq_smi",33:38,"Score HEIQ - Thème SMI")
+items2(tt, deb, lim, "Score HEIQ - Thème SMI")
 ```
 
 ### Comparaison entre groupes
@@ -306,8 +379,7 @@ items2(tt,"heiq_smi",33:38,"Score HEIQ - Thème SMI")
 #| label: tbl-grheiq-smi
 #| tbl-cap: Score HEIQ - Thème SMI selon le groupe
 
-
-items3(numheiq,"heiq_smi")
+items3(numheiq,deb)
 ```
 
 ## Thème CAA
@@ -315,16 +387,18 @@ items3(numheiq,"heiq_smi")
 ```{r}
 #| label: tbl-caa
 #| tbl-cap: Thème CAA
+deb <- "heiq_caa"
+lim <- 39:43
+  
+items1(tt,deb, lim)
 
-
-items1(tt,"heiq_caa",39:43)
 ```
 
 ```{r}
 #| label: fig-heiq-caa
 #| fig-cap: Score HEIQ - Thème CAA
 
-items2(tt,"heiq_caa",39:43,"Score HEIQ - Thème CAA")
+items2(tt,deb, lim, "Score HEIQ - Thème CAA")
 ```
 
 ### Comparaison entre groupes
@@ -333,8 +407,17 @@ items2(tt,"heiq_caa",39:43,"Score HEIQ - Thème CAA")
 #| label: tbl-grheiq-caa
 #| tbl-cap: Score HEIQ - Thème CAA selon le groupe
 
-items3(numheiq,"heiq_caa")
+items3(numheiq,deb)
 ```
+
+
+```{r}
+#| label: fig-grheiq-caa
+#| fig-cap: Score HEIQ - Thème CAA selon le groupe
+
+item4(numheiq, deb, tit1 = "HEIQ", tit2 = "Score CAA")
+```
+
 
 ## Thème STA
 
@@ -363,6 +446,15 @@ items2(tt,deb,lim,"Score HEIQ - Thème STA")
 
 items3(numheiq, deb)
 ```
+
+
+```{r}
+#| label: fig-grheiq-sta
+#| fig-cap: Score HEIQ - Thème STA selon le groupe
+
+item4(numheiq, deb, tit1 = "HEIQ", tit2 = "Score STA")
+```
+
 
 ## Thème SIS
 
@@ -425,7 +517,7 @@ items3(numheiq, deb)
 
 On additionne les résultats des thèmes pour obtenir le score total.
 
-L'analyse sera faite selon trois regroupements :  
+L'analyse a été faite selon trois regroupements :  
 
 - `ETP` vs `Témoin` vs `Témoin avec RR` (trois groupes)
 -  En intention de traiter : `ETP` vs `Témoin` + `Témoin avec RR`  (deux groupes)
@@ -511,12 +603,12 @@ tt |>
   scroll_box(width = "100%", height = "700px")
 ```
 
-Aucun critère démographique n'est associé au score HEIQ & les valeurs élevées des p-values rendent illusoire d'espérer un résultat sur une analyse en régression.
+Aucun critère démographique n'a été associé au score HEIQ & les valeurs élevées des p-values rendent illusoire d'espérer un résultat sur une analyse en régression.
 
 # Critères secondaires
 
-## Qualité de vie
-*La qualité de vie des patients du groupe ETP versus ceux du groupe témoin sera évaluée à l’aide du questionnaire validé VQ11.*
+## Critère 1
+*La qualité de vie des patients du groupe ETP versus ceux du groupe témoin a été évaluée à l’aide du questionnaire validé VQ11.*
 
 ```{r}
 #| label: tbl-vq11
@@ -552,7 +644,7 @@ rm(zz)
 
 Pas de différence retrouvée pour la qualité de vie entre les groupes. 
 
-## Critères secondaires
+## Critère 2
 *Les niveaux d’anxiété et de dépression des patients du groupe ETP versus ceux du groupe témoin seront évalués grâce au questionnaire validé HAD*
 
 ```{r}
@@ -571,7 +663,7 @@ zz$had_1_rec <- zz$had_1 %>%
     ## Recodage de zz$had_3 en zz$had_3_rec
 zz$had_3_rec <- zz$had_3 %>%
   fct_recode(
-    "2" = "Oui, mais ce n’est pas trop grave ",
+    "2" = "Oui, mais ce n’a été pas trop grave ",
     "3" = "Oui, très nettement ",
     "0" = "Pas du tout",
     "1" = "Un peu, mais cela ne m’inquiète pas "
@@ -642,7 +734,7 @@ zz$had_10_rec <- zz$had_10 %>%
 ## Recodage de zz$had_11 en zz$had_11_rec
 zz$had_11_rec <- zz$had_11 %>%
   fct_recode(
-    "3" = "Oui, c’est tout à fait le cas ",
+    "3" = "Oui, c’a été tout à fait le cas ",
     "0" = "Pas du tout",
     "1" = "Pas tellement",
     "1" = "Pas tellement ",
@@ -673,14 +765,13 @@ zz$had_14_rec <- zz$had_14 %>%
   )
 #
 had <- zz %>%
-  select(ends_with("rec")) %>%
+  dplyr::select(ends_with("rec")) %>%
   mutate_all(as.character) |>
   mutate_all(as.numeric) |>
 #
 rowwise() %>%
   mutate(hadA = sum(across(c(1,3,5,7,9,11,13)))) |>
 mutate(Anxiété = cut(hadA,
-  include.lowest = TRUE,
   right = FALSE,
   dig.lab = 4,
   breaks = c(0, 8,11, 15),
@@ -688,7 +779,6 @@ mutate(Anxiété = cut(hadA,
 ) |> 
   mutate(hadD = sum(across(c(2,4,6,8,10,12,14)))) |> 
     mutate(Dépression = cut(hadD,
-                         include.lowest = TRUE,
                          right = FALSE,
                          dig.lab = 4,
                          breaks = c(0, 8,11, 15),
@@ -719,7 +809,7 @@ bold_labels() |>
 ```
 
 ## Critère 3
-*La motivation envers l'activité physique pratiquée durant les temps libres sera évaluée par le questionnaire BREQ-2 version courte.*
+*La motivation envers l'activité physique pratiquée durant les temps libres a été évaluée par le questionnaire BREQ-2 version courte.*
 
 ```{r}
 #| label: tbl-breq-2
@@ -756,15 +846,33 @@ rm(zz)
 Pas de différence retrouvée pour la qualité de vie entre les groupes. 
 
 ## Critère 4
+*Comparer le nombre d’hospitalisations pour exacerbations de la BPCO des patients du groupe ETP versus ceux du groupe témoin.*
+```{r}
+#| label: dateinit
+#
+hnovo <- dd |> 
+  count(date_hosp_1_novo)
+hnovo <- pull(hnovo[2,2])
 
-En attente
+hhors <- date_hosp_1_hors <- dd |> 
+  count(date_hosp_1_hors)
+hhors <- pull(hhors[2,2])
+
+```
+
+On ne prend en compte que les patients ayant été hospitalisé dans l'année qui suit leur inclusion dans l'étude, cette dernière définie comme : 
+
+- Pour les patients suivis en MPSAT-ETP, la date de début du suivi,
+- Pour les témoins le 31/07/2021.
+
+On ne retrouve alors que deux patients, un hospitalisé sur NOVO, un hospitalisé hors NOVO. Vu ce très faible nombre aucun calcul ou présentation ne peut être fait.
 
 ## Critère 5
 *La perception et le ressenti des patients du groupe ETP versus ceux du groupe témoin concernant ces ateliers seront évalués grâce à un questionnaire sur le suivi et la satisfaction des patients*
 
 ```{r}
 #| label: tbl-satisf
-#| tbl-cap: Questionnaire de satisfaction
+#| tbl-cap: questionnaire de satisfaction
 
 tt |> 
   dplyr::select(c(90:96)) |> 
@@ -782,8 +890,127 @@ tt |>
 
 # Technique {.appendix}
 
-Les données discrètes ont été présentés en pourcentage puis comparées par le test du $\Chi^2$ de Pearson avec correction de Yates si nécessaire. Les données numériques ont été présentées par leur médiane & les quartiles puis comparées par le test no paramétrique de Wilcoxon.
 
-L'analyse statistique a été réalisée avec le logiciel **R** [@rstat] & diverses librairies en particulier celles du `tidyverse` [@tidy] & `baseph` [@baseph].
+Le risque $\alpha$ retenu a été de 0,05 & la puissance de 0,8.
+
+Toutes les variables sont discrètes & sont présentées en nombre avec le pourcentage. L'intervalle de confiance (à 95 %) a été calculé par bootstrap (package `boot` [@boot]). Le test du $\chi^2$ de \textsc{Spearman} pourra être utilisé sous réserve d'un effectif suffisant, à défaut le test exact de \textsc{Fischer} pour comparer des items d'un même questionnaire entre eux. Les comparaisons entre les deux groupes seront réalisées après transformation en nombre des résultats des questionnaires (validé pour le \textsc{heiq} en prenant la moyenne par thème). Les comparaisons seront alors réalisées par un test t de Student après vérification des conditions d'application. À défaut un test non paramétrique de Wilcoxon a été utilisé.
+
+Des graphiques seront réalisés pour les résultats importants (package `ggplot2` [@ggplot]).
+
+## Taille de l'échantillon
+
+```{r}
+#| label: taille
+
+moy1 <- 2.96
+dif <- 0.1
+moy2 <- moy1 * (1 + dif)
+et <- mean(c(0.54, .76, .51, .47, .39, .42, .53, .63))
+nn <- n.for.2means(moy1, moy2, et, et)
+nb <- nn$n1
+```
+
+Le critère principal porte sur la comparaison du résultat chiffré du score \textsc{heiq} entre le groupe interventionnel & le groupe témoin. Une étude de validation de la version française de ce score \marginnote{Validation française du health education impact questionnaire (\textsc{heiq}) auprès d’une clientèle avec maladies chroniques en soins de première ligne -- Anne BÉLANGER (Université du Québec à Chicoutimi 2015)} retrouve sur un échantillon de près de 300 cas un résultat global à `r moy1` ± `r round(et,2)`. En estimant qu'une différence de 10 % de ce score entre les deux groupes a une signification clinique & que les deux groupes gardent le même écart-type, on peut estimé l'effectif nécessaire à **`r nb` cas** utilisables par groupe soit un minimum de `r ceiling(nb* 1.1)` cas à inclure au total.
+
+## Données manquantes & contrôle qualité
+
+Un décompte des données manquantes a été réalisé. Les variables comportant trop de données manquantes ou non utilisables ne seront pas prises en compte après validation par le promoteur en particulier les scores \textsc{heiq} incomplets.
+
+## Description de la population
+
+Les données démographiques seront présentés. Des comparaisons entre les deux groupes seront réalisées pour rechercher une éventuelle différence.
+
+
+
+## Objectif principal
+
+Chaque item est une échelle de Likert à quatre niveau. celles-ci sont regroupés en thèmes. Pour chaque thème les résultats de chaque item sont présentés. Une comparaison entre les groupes n'est faite que paour chaque thème. Aucun test ne a été réalisé à ce stade.
+
+On calcule pour chaque thème la médiane & les quartiles des items après avoir transformé le résultat de chaque item en valeur numérique (de 1 à 4) & en additionnant les valeurs pour chaque thème (précédure validée pour ce score) puis comparées par des tests t de \textsc{Student}. Une comparaison globale sur le score total a été présentée. Une présentation graphique a été réalisée (package `ggstats`[@ggstats]).
+
+Un nombre important de patients du groupe témoin ont plus ou moins suivis des ateliers d'ETP. Une analyse de sous-groupe a été réalisée pour comparer les résultats des patients vierges d'ETP avec ceux ayant déjà suivi des ateliers. L'analyse a donc été réalisée selon trois scénarios : 
+
+- en `intention de traiter` : ETP vs témoin.
+- en `per protocole` : ETP et témoins ayant déjà suivi un  d'ETP vs témoins vierges d'ETP.
+- une analyse entre les trois groupes : ETP vs témoins ayant déjà suivi un  d'ETP vs témoins vierges d'ETP. Un test de Kruskal-Wallis a alors été utilisé.
+
+Une recherche de facteurs pouvant influer la réponse aux ateliers (âge, gravité de la maladie\dots) a été réalisée tout d'abord une analyse simple avec des tests item par item a été présentée dans un tableau. Cette analyse a été réalisée uniquement sur le score total pour ne pas multiplier les tests.
+
+## Objectifs secondaires
+
+Toutes les analyses reposants sur des scores ou échelles ont été réalisées de la même manière : présentation des résultats item par item puis comparaison entre les groupes en utilisant le score global.
+
+Pour l'étude des hospitalisations une comparaison simple a été faite sur le nombre d'hospitalisation pendant la première année entre les groupes & présentée par un Odd-Ratio (package `epiDisplay` [@epid]). Si la répartition du nombre d'hospitalisations a été très asymétrique (en particulier s'il y a beaucoup de patients n'ayant pas été hospitalisés) ce nombre a été discrétisé en deux ou trois classes puis les effectifs comparés par un test du $\chi^2$ ou de Fischer.
+
+Une analyse de la durée de séjour a été réalisée sur le même principe. On analyse aussi le lieu de séjour (SSR  vs service de court séjour en première intention) & la durée totale d'hospitalisation sur un an. Une comparaison a été réalisée par un test de \textsc{Wilcoxon}.
+
+L'analyse statistique a été réalisée avec le logiciel **R** [@rstat] & divers packages en particulier `tidyverse` [@tidy] & `baseph` [@baseph].
+
+## Import
+
+```{r}
+#| label: import
+
+importph <- function(){
+rm(list=ls())
+library(readODS)
+library(tidyverse)
+library(janitor)
+library(baseph)
+library(labelled)
+#
+nan <- c("NA","ND",""," ", "Manquant")
+
+mp <- read_ods("datas/MPSAT.ods", sheet = "mpsat", na = nan) |>
+  janitor::clean_names() |>
+  dplyr::mutate_if(is.character, as.factor)
+bn <- read_ods("datas/MPSAT.ods", sheet = "bnom")
+var_label(mp) <- bn$nom
+mp <- mp |>
+  dplyr::select(1,2,11:20)
+#
+tt <- read_ods("datas/questions.ods", sheet = "quest",na = nan) |>
+  janitor::clean_names() |>
+  dplyr::mutate_if(is.character, as.factor)
+bn <- read_ods("datas/questions.ods", sheet = "noms")
+var_label(tt) <- bn$Nom
+  #BMI
+tt <- tt |>
+  mutate(bmi = 10000*poids/taille^2) |>
+  mutate(bmi = baseph::bmiph(bmi,"fr")) |>
+  relocate(bmi, .after = "taille") |>
+# HEIQ
+mutate(across(starts_with("heiq"), function(x) factor(x,
+   c( "En accord", "Fortement en accord", "En désaccord", "Fortement en désaccord"
+  )))) |>
+mutate(across(starts_with("heiq"), function(x) fct_relevel(x,
+                                                               "Fortement en désaccord","En désaccord", "En accord", "Fortement en accord"))) |>
+  mutate(across(starts_with("vq11"), function(x) factor(x,levels(tt$vq11_3)))) |>
+  mutate(across(starts_with("vq11"), function(x) fct_relevel(x,
+ "Pas du tout","Un peu", "Moyennement", "Beaucoup","Extrêmement"))) |>
+  #VQ11
+  mutate(across(starts_with("vq11"), function(x) factor(x,levels(tt$vq11_3)))) |>
+  mutate(across(starts_with("vq11"), function(x) fct_relevel(x,
+ "Pas du tout", "Un peu", "Moyennement", "Beaucoup"))) |>
+  ## Réordonnancement de tt$breq_2_1
+  mutate(across(starts_with("breq"), function(x) fct_relevel(x,
+    "Pas vrai du tout", "Moyennement vrai", "Tout à fait vrai"))) |>
+## Réordonnancement de tt$satisfaction_2
+mutate(satisfaction_2 = fct_relevel(satisfaction_2,
+    "Dans la journée", "En 24 heures", "En 48 heures", "En 1 semaine",
+    "Plus"))
+#
+tt <- left_join(tt, mp, by = "id")
+#
+dd <- read_ods("datas/MPSAT-ETP_dates.ods") |>
+  clean_names() |>
+  mutate(across(starts_with("date"),mdy )) |>
+  mutate(across(starts_with("date_hosp"), function(x) as.numeric(x - date_integration))) |>
+  mutate(across(starts_with("date_hosp"), function(x) as.factor(ifelse((x>365 | x<0),"non","oui"))))
+#
+
+save(tt, bn, dd, file = "datas/quest.RData")
+}
+```
 
 :::
