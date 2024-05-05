@@ -25,3 +25,4 @@ la MPSAT sur le territoire.
   - *mpsatetpheiq.qmd* : corrections sur les calculs pour le score HEIQ
   - *mpsatetpcomplements:qmd* : Reprise du score de satisfaction avec des items comportant plusieurs réponses en une.
 
+24/04/2024 **Rapport final** avec sortie en html (`mpsatetp.qmd`) & pdf (`mpsatetp2.qmd`).

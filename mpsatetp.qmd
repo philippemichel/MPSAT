@@ -1,6 +1,6 @@
 ---
 subtitle: "Analyse statistique - V 1.0"
-cache: false
+cache: true
 ---
 
 ::: {.panel-tabset}

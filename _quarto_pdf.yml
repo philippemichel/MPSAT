@@ -1,0 +1,58 @@
+title: "Fausses-couches (Enquête)"
+subtitle: "Rapport Statistique -- V1.0"
+lang: fr
+author:
+  - name: "D\up{r} Philippe \\textsc{Michel}"
+    affiliations:
+      name: "USRC -- Hôpital NOVO"
+      orcid: "0000-0003-2392-7186"
+      email: "philippe.michel@ght-novo.fr"
+      role: "Statisticien"
+      department: "Unité de Soutien à la Recherche Clinique"
+format:
+ titlepage-pdf:
+  titlepage: bg-image
+  titlepage-bg-image: "novo_usrc.png"
+  logo-space-after: "0\\baselineskip"
+  documentclass: scrreprt
+  number-sections: true
+  titlepage-footer: "\\xx textsc{}  \\newline D\up{r} xx \textsc{} \\newline Service de  -- Hôpital NOVO (Site Pontoise)\\newline\\newline Chef de projet : M\up{me} xx \textsc{}
+\\newline \\newline  \\newline Étude monocentrique \\newline \\today"
+titlepage-theme:
+  title-fontstyle: ["Huge", "bfseries"]
+  title-color: novo
+  subtitle-color: novo
+  subtitle-fontstyle: ["huge"]
+  logo-size: "0.2\\textheight"
+  vrule-width: "0.1cm"
+  vrule-color: novo
+include-in-header:
+   text: |
+    \definecolor{novo}{HTML}{27484b}
+    \usepackage{siunitx}
+    \usepackage{arsenal}
+df-print : kable
+jss-pdf:
+  keep-tex: true
+pdf-engine: lualatex
+keep-tex: true
+number-sections: true
+toc: true
+lof: true
+lot: true
+fig-cap-location: bottom
+tbl-cap-location: top
+classoption: [french]
+papersize: a4
+editor: source
+bibliography: stat.bib
+cite-method: biblatex
+csl: jama.csl
+reference-location: margin
+#citation-location: margin
+license: "MIT"
+echo: false
+warning: false
+message: false
+cache: false
+
