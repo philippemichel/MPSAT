@@ -1,0 +1,660 @@
+---
+subtitle: "Analyse statistique - HEIQ"
+lang: fr
+author:
+  - name: "D\\up{r} Philippe \\textsc{Michel}"
+    affiliations:
+      name: "USRC -- Hôpital NOVO"
+      orcid: "0000-0003-2392-7186"
+      email: "philippe.michel@ght-novo.fr"
+      role: "Statisticien"
+      department: "Unité de Soutien à la Recherche Clinique"
+format:
+ titlepage-pdf:
+  titlepage: bg-image
+  titlepage-bg-image: "novo_usrc.png"
+  logo-space-after: "0\\baselineskip"
+  documentclass: scrreprt
+  number-sections: true
+  titlepage-footer:  "Anne-Charlotte \\textsc{Tauveron} -- Hôtel du Département du Val d’Oise – MDPH \\newline D\\up{r} Bruno \\textsc{Philippe} -- Service de Pneumologie, réhabilitation respiratoire & SSR Hôpital \\textsc{novo} (Site Aincourt)\\newline \\newline Chef de projet : M\\up{me} Mathilde \\textsc{Wlodarczyk}\\newline \\newline Évaluation des impacts multidimensionnels des ateliers d’éducation thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité de vie, la santé mentale des patients atteints de \\textsc{bpco} pris en charge par la \\textsc{mpsat} sur le territoire \\textsc{novo}  \\newline \\newline \\today"
+titlepage-theme:
+  title-fontstyle: ["Huge", "bfseries"]
+  title-color: novo
+  subtitle-color: novo
+  subtitle-fontstyle: ["huge"]
+  logo-size: "0.2\\textheight"
+  vrule-width: "0.1cm"
+  vrule-color: novo
+include-in-header:
+   text: |
+    \definecolor{novo}{HTML}{27484b}
+    \usepackage{siunitx}
+    \usepackage{arsenal}
+df-print : kable
+jss-pdf:
+  keep-tex: true
+pdf-engine: lualatex
+keep-tex: true
+number-sections: true
+toc: true
+lof: true
+lot: true
+fig-cap-location: bottom
+tbl-cap-location: top
+classoption: [french]
+papersize: a4
+editor: source
+#bibliography: stat.bib
+#cite-method: biblatex
+#csl: jama.csl
+#reference-location: margin
+#citation-location: margin
+license: "MIT"
+echo: false
+warning: false
+message: false
+cache: false
+fig-responsive: true
+---
+
+# Démographie
+
+
+```{r}
+#| label: info
+
+ rm(list=ls())
+library(baseph)
+library(tidyverse)
+library(kableExtra)
+library(scales)
+library(forestmodel)
+library(gtsummary)
+library(epiDisplay)
+library(labelled)
+library(ggstats)
+library(DataExplorer)
+library(xlsx)
+library(lubridate)
+
+expx <- TRUE
+classeur <- "mpsatetp_heiq.xlsx"
+if (expx){system(paste0("rm -f ",classeur))}
+#
+theme_gtsummary_language(language = "fr", decimal.mark = ",")
+options(OutDec = ",")
+#
+load(file = "datas/quest.RData")
+# sessionInfo()
+```
+
+
+```{r}
+#| label: macrotab
+
+formt <- function(tabx, oui = TRUE, comp = "") {
+  if (oui) {
+    cpt = 'Pour les données en oui/non seul le résultat pour oui a été présenté'
+  }
+  else{
+    cpt = ''
+  }
+#  cpt = paste0(cpt, ". ", comp)
+  tabx |>
+ modify_footnote(update = everything() ~ cpt) |>
+    add_n() |>
+    add_overall() |> 
+    bold_labels()
+}
+```
+
+```{r}
+#| label: macro-item1
+
+item1 <- function(thx,
+                  classeur = "",
+                  nexp = "",
+                  nexpx = FALSE) {
+  th <- paste0("heiq_", thx)
+  tab1 <- tth |>
+    dplyr::filter(Items %in% th) |> 
+    mutate(Items = fct_relevel(Items, th)) |>
+    mutate(Items = factor(Items,labels = bheiq[thn])) |>
+    tbl_cross(
+      missing = "no",
+      row = Items,
+      col = Réponse,
+      margin = NULL,
+      percent = "row"
+    ) |>
+    bold_labels() 
+  
+  tab1 |> 
+    pexptabph(nomfich = classeur,
+              nomsheet = nexp,
+              exp = nexpx)
+  return(tab1)
+}
+```
+
+```{r}
+#| label: macro-item2
+
+item2 <- function(thh = thn, tit = tith) {
+  thx <- paste0("heiq_", thh)
+  nn <-  bheiq[thh]
+  tt |>
+    dplyr::select(thx) |>
+    rename_with(~ nn) |> 
+    gglikert() +
+    labs(title = tit) +
+    scale_y_discrete(labels = label_wrap(40))
+}
+```
+
+```{r}
+#| label: macro-item3
+
+# Additionne les items d'un thème puis comparaison selon groupe
+
+item3 <- function(thn, classeur = classeur, nexp = "", nexpx = FALSE){
+tab1 <- numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(thn))) |>
+  tbl_continuous( variable = tot, include = groupe) |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(nomfich = classeur, nomsheet = nexp, exp = nexpx)
+  return(tab1)
+}
+```
+
+```{r}
+#| label: macro-item4
+
+# Analyse selon les groupes en linéaire. 
+
+item4 <- function(thn, tit = titc){
+zz <- numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(thn)))
+
+ll <- lm(tot ~ groupe, data = zz)
+panels <- list(
+  list(width = 0.03),
+  list(width = 0.1, display = ~variable, fontface = "bold", heading = tit),
+  list(width = 0.1, display = ~level),
+  list(width = 0.05, display = ~n, hjust = 1),
+  list(width = 0.03, item = "vline", hjust = 0.5),
+  list(
+    width = 0.55, item = "forest", hjust = 0.5, heading = "Odd Ratio", linetype = "dashed",
+    line_x = 0
+  ),
+  list(width = 0.03, item = "vline", hjust = 0.5),
+  list(width = 0.12, display = ~ ifelse(reference, "Reference", sprintf(
+    "%0.2f (%0.2f, %0.2f)",
+    trans(estimate), trans(conf.low), trans(conf.high)
+  )), display_na = NA),
+  list(
+    width = 0.05,
+    display = ~ ifelse(reference, "", format.pval(p.value, digits = 1, eps = 0.001)),
+    display_na = NA, hjust = 1, heading = "p"
+  ),
+  list(width = 0.03)
+)
+forest_model(ll, panels)
+}
+```
+
+
+# Analyse par thème
+
+*L’impact global des ateliers d’ETP a été évalué à l’aide du score global du questionnaire validé en langue française*
+
+Le score HEIQ a été divisé en plusieurs thèmes qui vont être présentés un à un avant d'analyser le score final. l'analyse linéaire avec tracé du graphique en *arbre de noël* ne sera réalisée que si une différence significative est mise en évidence. 
+
+```{r}
+#| label: num-heiq
+
+numheiq <- tt |> 
+  dplyr::select(c(starts_with("heiq"))) |> 
+  mutate_all(as.numeric) |> 
+  mutate(across(c(4,7,12,14,18,21), function(x) 5-x))
+numheiq$groupe <- tt$groupe
+#
+tth <- tt |>
+  dplyr::select(all_of(19:58)) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Items",
+    values_to = "Réponse"
+  ) |>
+  mutate(Items = factor(Items))
+#
+bheiq <- pull(bn[18:57,1])
+nheiq <- c("Engagement positif et actif dans la vie",
+           "Comportements dirigés vers la santé",
+           "Acquisition d’habiletés et de techniques",
+           "Approches et attitudes constructives",
+           "Autocontrôle et perspicacité",
+           "Navigation des services de santé",
+           "Intégration sociale et soutien",
+           "Bien-être émotionnel")
+
+nheiq2 <- c("Engagement positif et\n actif dans la vie",
+           "Comportements dirigés\n vers la santé",
+           "Acquisition d’habiletés\n et de techniques",
+           "Approches et attitudes\n constructives",
+           "Autocontrôle et perspicacité",
+           "Navigation des\n services de santé",
+           "Intégration sociale\n et soutien",
+           "Bien-être émotionnel")
+```
+
+## Engagement positif et actif dans la vie
+
+```{r}
+#| label: tbl-heiq1
+#| tbl-cap: "HEIQ - Engagement positif et actif dans la vie"
+#| 
+thn <- c(2,5,8,10,15)
+tith <- nheiq[1]
+titc <- nheiq2[1]
+
+item1(thx = thn, classeur = classeur, nexp = "heiq1", nexpx = expx)
+```
+
+```{r}
+#| label: fig-heiq1
+#| fig-cap: "HEIQ - Engagement positif et actif dans la vie"
+
+item2(thn, tith)
+```
+
+
+```{r}
+#| label: tbl-grheiq1
+#| tbl-cap: "HEIQ - Engagement positif et actif dans la vie selon le groupe"
+
+item3(thn, classeur = classeur, nexp = "heiq1g", nexpx = expx)
+```
+
+```{r}
+#| label: fig-grheiq1
+#| fig-cap: "HEIQ - Engagement positif et actif dans la vie selon le groupe"
+
+item4(thn, tit = titc)
+```
+
+\clearpage
+## Comportements dirigés vers la santé
+
+```{r}
+#| label: tbl-heiq2
+#| tbl-cap: "HEIQ - Comportements dirigés vers la santé"
+
+thn <- c(1,9,13,19)
+tith <- nheiq[2]
+titc <- nheiq2[2]
+
+item1(thx = thn, classeur = classeur, nexp = "heiq2", nexpx = expx)
+```
+
+```{r}
+#| label: fig-heiq2
+#| fig-cap: "HEIQ - Comportements dirigés vers la santé"
+
+item2(thn, tith)
+```
+
+
+```{r}
+#| label: tbl-grheiq2
+#| tbl-cap: "HEIQ - Comportements dirigés vers la santé selon le groupe"
+
+item3(thn, classeur = classeur, nexp = "heiq2g", nexpx = expx)
+```
+
+```{r}
+#| label: fig-grheiq2
+#| fig-cap: "HEIQ - Comportements dirigés vers la santé selon le groupe"
+
+item4(thn, tit = titc)
+```
+
+\clearpage
+## Acquisition d’habiletés et de techniques
+
+```{r}
+#| label: tbl-heiq3
+#| tbl-cap: HEIQ - Acquisition d’habiletés et de techniques"
+
+thn <- c(23,25,26,30)
+tith <- nheiq[3]
+titc <- nheiq2[3]
+
+item1(thx = thn, classeur = classeur, nexp = "heiq3", nexpx = expx)
+```
+
+```{r}
+#| label: fig-heiq3
+#| fig-cap: "HEIQ - Acquisition d’habiletés et de techniques"
+
+item2(thn, tith)
+```
+
+
+```{r}
+#| label: tbl-grheiq3
+#| tbl-cap: "HEIQ - Acquisition d’habiletés et de techniques selon le groupe"
+
+item3(thn, classeur = classeur, nexp = "heiq3g")
+```
+
+```{r}
+#| label: fig-grheiq3
+#| fig-cap: "HEIQ - Acquisition d’habiletés et de techniques selon le groupe"
+
+item4(thn, tit = titc)
+```
+
+\clearpage
+## Approches et attitudes constructives
+
+```{r}
+#| label: tbl-heiq4
+#| tbl-cap: "HEIQ - Approches et attitudes constructives"
+
+thn <- c(27,34,36,39,40)
+tith <- nheiq[4]
+titc <- nheiq2[4]
+
+item1(thx = thn, classeur = classeur, nexp = "heiq4", nexpx = expx)
+```
+
+```{r}
+#| label: fig-heiq4
+#| fig-cap: "HEIQ - Approches et attitudes constructives"
+
+item2(thn, tith)
+```
+
+
+```{r}
+#| label: tbl-grheiq4
+#| tbl-cap: "HEIQ - Approches et attitudes constructives selon le groupe"
+
+item3(thn, classeur = classeur, nexp = "heiq4g", nexpx = expx)
+```
+
+```{r}
+#| label: fig-grheiq4
+#| fig-cap: "HEIQ - Approches et attitudes constructives selon le groupe"
+
+item4(thn, tit = titc)
+```
+
+\clearpage
+## Autocontrôle et perspicacité
+
+```{r}
+#| label: tbl-heiq5
+#| tbl-cap: "HEIQ - Autocontrôle et perspicacité"
+
+thn <- c(3,6,11,16,17,20)
+tith <- nheiq[5]
+titc <- nheiq2[5]
+
+item1(thx = thn, classeur = classeur, nexp = "heiq5", nexpx = expx)
+```
+
+```{r}
+#| label: fig-heiq5
+#| fig-cap: "HEIQ - Autocontrôle et perspicacité"
+
+item2(thn, tith)
+```
+
+
+```{r}
+#| label: tbl-grheiq5
+#| tbl-cap: "HEIQ - Autocontrôle et perspicacité selon le groupe"
+
+item3(thn, classeur = classeur, nexp = "heiq5g", nexpx = expx)
+```
+
+```{r}
+#| label: fig-grheiq5
+#| fig-cap: "HEIQ - Autocontrôle et perspicacité selon le groupe"
+
+item4(thn, tit = titc)
+```
+
+\clearpage
+## Navigation des services de santé
+
+```{r}
+#| label: tbl-heiq6
+#| tbl-cap: "HEIQ - Navigation des services de santé"
+
+thn <- c(24,29,32,33,38)
+tith <- nheiq[6]
+titc <- nheiq2[6]
+
+item1(thx = thn, classeur = classeur, nexp = "heiq6", nexpx = expx)
+```
+
+```{r}
+#| label: fig-heiq6
+#| fig-cap: "HEIQ - Navigation des services de santé"
+
+item2(thn, tith)
+```
+
+
+```{r}
+#| label: tbl-grheiq6
+#| tbl-cap: "HEIQ - Navigation des services de santé selon le groupe"
+
+item3(thn, classeur = classeur, nexp = "heiq6g", nexpx = expx)
+```
+
+```{r}
+#| label: fig-grheiq6
+#| fig-cap: "HEIQ - Navigation des services de santé selon le groupe"
+
+item4(thn, tit = titc)
+```
+
+\clearpage
+## Intégration sociale et soutien
+
+```{r}
+#| label: tbl-heiq7
+#| tbl-cap: "HEIQ - Intégration sociale et soutien"
+
+thn <- c(22,28,31,35,37)
+tith <- nheiq[7]
+titc <- nheiq2[7]
+
+item1(thx = thn, classeur = classeur, nexp = "heiq7", nexpx = expx)
+```
+
+```{r}
+#| label: fig-heiq7
+#| fig-cap: "HEIQ - Intégration sociale et soutien"
+
+item2(thn, tith)
+```
+
+
+```{r}
+#| label: tbl-grheiq7
+#| tbl-cap: "HEIQ - Intégration sociale et soutien selon le groupe"
+
+item3(thn, classeur = classeur, nexp = "heiq7g", nexpx = expx)
+```
+
+```{r}
+#| label: fig-grheiq7
+#| fig-cap: "HEIQ - Intégration sociale et soutien selon le groupe"
+
+item4(thn, tit = titc)
+```
+
+
+\clearpage
+## Bien-être émotionnel
+
+::: {.callout-important}
+**Échelle inverse !**
+:::
+
+```{r}
+#| label: tbl-heiq8
+#| tbl-cap: "HEIQ - Bien-être émotionnel"
+
+thn <- c(4,7,12,14,18,21)
+tith <- nheiq[8]
+titc <- nheiq2[8]
+
+item1(thx = thn, classeur = classeur, nexp = "heiq8", nexpx = expx)
+```
+
+```{r}
+#| label: fig-heiq8
+#| fig-cap: "HEIQ - Bien-être émotionnel"
+
+item2(thn, tith)
+```
+
+```{r}
+#| label: tbl-grheiq8
+#| tbl-cap: "HEIQ - Bien-être émotionnel selon le groupe"
+
+item3(thn, classeur = classeur, nexp = "heiq8g", nexpx = expx)
+```
+
+```{r}
+#| label: fig-grheiq8
+#| fig-cap: "HEIQ - Bien-être émotionnel selon le groupe"
+
+item4(thn, tit = titc)
+```
+
+
+\clearpage
+# Analyse Globale
+
+On additionne les résultats des thèmes pour obtenir le score total.
+
+L'analyse a été faite selon trois regroupements :  
+
+- `ETP` vs `Témoin` vs `Témoin avec RR` (trois groupes)
+-  En intention de traiter : `ETP` vs `Témoin` + `Témoin avec RR`  (deux groupes)
+- En per protocole : `ETP` + `Témoin avec RR` vs `Témoin` (deux groupes)
+
+Puis on recherchera des facteurs démographiques ou autres qui pourraient entraîner des différences. 
+
+\clearpage
+## Analyse sur trois groupes
+
+```{r}
+
+
+#| label: tbl-heiqtot
+#| tbl-cap: "Score HEIQ total - 3 groupes"
+
+numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(starts_with("heiq")))) |>
+  tbl_continuous( variable = tot, include = groupe) |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(nomfich = classeur, nomsheet = "heiqtot3g", exp = expx)
+```
+
+\clearpage
+## Analyse en intention de traiter
+
+On compare le groupe `ETP` au groupe `témoin`.
+
+```{r}
+#| label: tbl-heiqitt
+#| tbl-cap: "Score HEIQ total - ITT"
+
+## Recodage de numheiq$groupe en numheiq$inttrait
+numheiq$inttrait <- numheiq$groupe %>%
+  fct_recode(
+    "Témoin" = "Témoin avec RR"
+  )
+
+numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(starts_with("heiq")))) |>
+  tbl_continuous( variable = tot, include = inttrait) |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq-int_trait")
+```
+
+\clearpage
+## Analyse en per protocole
+
+On compare les groupes ayant suivi l'ETP ( groupes `ETP` & `Témoin avec RR`) au groupe `Témoin`.
+
+```{r}
+#| label: tbl-heiqperprot
+#| tbl-cap: "Score HEIQ total - ITT"
+
+## Recodage de numheiq$groupe en numheiq$perprot
+numheiq$perprot <- numheiq$groupe %>%
+  fct_recode(
+    "ETP" = "Témoin avec RR"
+  )
+
+numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(starts_with("heiq")))) |>
+  tbl_continuous( variable = tot, include = perprot) |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq-per_prot")
+```
+
+\clearpage
+## Analyse des facteurs associés
+
+```{r}
+#| label: tbl-heiqassocdemo
+#| tbl-cap: Facteurs démographiques et score HEIQ
+
+numheiq <- numheiq |> 
+rowwise() |>
+  mutate(tot = sum(c_across(starts_with("heiq"))))
+
+
+tt$totheiq <- numheiq$tot
+
+tt |> 
+  tbl_continuous(totheiq, include = c(2,3,6:14,102)) |> 
+  add_p() |> 
+  bold_labels() |>
+    pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq_fact", lg = TRUE) |> 
+  scroll_box(width = "100%", height = "700px")
+```
+
+Aucun critère démographique n'a été associé au score HEIQ de manière claire au résultat du test. on écrit un modèle en régression reprenant tous les critères démographiques ayant un p <0.2 & les 3 groupes. 
+
+```{r}
+#| label: fig-totreg
+#| fig-cap: "Facteurs démographiques et score HEIQ -Régression"
+
+glm(totheiq ~ age + date_apparitionsymptomes + groupe, data = tt) |> 
+  tbl_regression() |> 
+  bold_p() |> 
+  pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiqtot_reg", lg = TRUE) 
+
+```
+
+Ni l'âge ni l'ancienneté des symptômes ne semblent influer sur les différence de résultats entre les différents groupes.Précision : il n' y a pas d'interaction entre les variables age & ancienneté des symptômes.

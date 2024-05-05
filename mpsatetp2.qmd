@@ -1,19 +1,63 @@
 ---
 subtitle: "Analyse statistique - V 1.0"
-cache: false
+lang: fr
+author:
+  - name: "D\\up{r} Philippe \\textsc{Michel}"
+    affiliations:
+      name: "USRC -- Hôpital NOVO"
+      orcid: "0000-0003-2392-7186"
+      email: "philippe.michel@ght-novo.fr"
+      role: "Statisticien"
+      department: "Unité de Soutien à la Recherche Clinique"
+format:
+ titlepage-pdf:
+  titlepage: bg-image
+  titlepage-bg-image: "novo_usrc.png"
+  logo-space-after: "0\\baselineskip"
+  documentclass: scrreprt
+  number-sections: true
+  titlepage-footer:  "Anne-Charlotte \\textsc{Tauveron} -- Hôtel du Département du Val d’Oise – MDPH \\newline D\\up{r} Bruno \\textsc{Philippe} -- Service de Pneumologie, réhabilitation respiratoire & SSR Hôpital \\textsc{novo} (Site Aincourt)\\newline \\newline Chef de projet : M\\up{me} Mathilde \\textsc{Wlodarczyk}\\newline \\newline Évaluation des impacts multidimensionnels des ateliers d’éducation thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité de vie, la santé mentale des patients atteints de \\textsc{bpco} pris en charge par la \\textsc{mpsat} sur le territoire \\textsc{novo}  \\newline \\newline \\today"
+titlepage-theme:
+  title-fontstyle: ["Huge", "bfseries"]
+  title-color: novo
+  subtitle-color: novo
+  subtitle-fontstyle: ["huge"]
+  logo-size: "0.2\\textheight"
+  vrule-width: "0.1cm"
+  vrule-color: novo
+include-in-header:
+   text: |
+    \definecolor{novo}{HTML}{27484b}
+    \usepackage{siunitx}
+    \usepackage{arsenal}
+df-print : kable
+jss-pdf:
+  keep-tex: true
+pdf-engine: lualatex
+keep-tex: true
+number-sections: true
+toc: true
+lof: true
+lot: true
+fig-cap-location: bottom
+tbl-cap-location: top
+classoption: [french]
+papersize: a4
+editor: source
+bibliography: stat.bib
+cite-method: biblatex
+csl: jama.csl
+#reference-location: margin
+#citation-location: margin
+license: "MIT"
+echo: false
+warning: false
+message: false
+cache: true
 ---
 
-::: {.panel-tabset}
+# Démographie
 
-# Introduction
-
-**Évaluation des impacts multidimensionnels des ateliers d’éducation thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité de vie, la santé mentale des patients atteints de BPCO pris en charge par la MPSAT sur le territoire NOVO**
-
-**Investigateur coordonnateur** : Mme Anne-Charlotte TAUVERON -- Hôtel du Département du Val d’Oise – MDPH 
-
-**Responsable scientifique** : Dr Bruno Philippe -- Service de Pneumologie, réhabilitation respiratoire & SSR Hôpital NOVO (Site Aincourt)
-
-**Chef de projet** : Mme Mathilde WLODARCZYK
 
 ```{r}
 #| label: info
@@ -32,7 +76,7 @@ library(DataExplorer)
 library(xlsx)
 library(lubridate)
 
-expx <- TRUE
+expx <- FALSE
 classeur <- "mpsatetp1.xlsx"
 if (expx){system(paste0("rm -f ",classeur))}
 #
@@ -66,42 +110,42 @@ formt <- function(tabx, oui = TRUE, comp = "") {
 ```{r}
 #| label: macro-item1
 
-items1 <- function(df, deb, nlabs,exp = expx, classeur = classeur) {
-nexp <- paste0(deb, "tab")
-tab1 <- df |>
-  dplyr::select(c(starts_with(deb))) |>
-  pivot_longer(
-    cols = everything(),
-    names_to = "Items",
-    values_to = "Réponse"
-  ) |>
-  mutate(Items = factor(Items, labels = bn$Nom[nlabs])) |>
-  tbl_cross(row = Items, col = Réponse, margin = NULL,
-            percent = "row") |>
-  modify_header(label~ str_to_upper(deb)) |> 
-  bold_labels() |> 
-       as_kable_extra() |> 
-       kable_styling(bootstrap_options = "striped", 
-                     font_size = 14, 
-                     fixed_thead = TRUE)
-   if(exp == TRUE){
- #    tab1 |> 
- # write.xlsx(nomfich, sheetName = nexp, append = TRUE)
-     }
-   return(tab1)
+item1 <- function(thn,
+                  classeur = "",
+                  nexp = "",
+                  nexpx = FALSE) {
+  th <- paste0("heiq_", thn)
+  tab1 <- tth |>
+    dplyr::filter(Items %in% th) 
+  return(tab1)
+  #   mutate(Items = fct_relevel(Items, th)) |>
+  #   mutate(Items = factor(Items,labels = bheiq[thn])) |>
+  #   tbl_cross(
+  #     row = Items,
+  #     col = Réponse,
+  #     margin = NULL,
+  #     percent = "row"
+  #   ) |>
+  #   bold_labels() |>
+  #   pexptabph(nomfich = classeur,
+  #             nomsheet = nexp,
+  #             exp = nexpx)
+  # return(tab1)
 }
 ```
 
 ```{r}
 #| label: macro-item2
 
-items2 <- function(df = tt, deb, nlabs, tit){
-df |>
-  dplyr::select(c(starts_with(deb))) |>
-  rename_with(~ bn$Nom[nlabs]) |>
-  gglikert() +
-  labs(title = tit) +
-  scale_y_discrete(labels = label_wrap(40))
+item2 <- function(thh = thn, tit = tith) {
+  thx <- paste0("heiq_", thh)
+  nn <-  bheiq[thh]
+  tt |>
+    dplyr::select(thx) |>
+    rename_with(~ nn) |> 
+    gglikert() +
+    labs(title = tit) +
+    scale_y_discrete(labels = label_wrap(40))
 }
 ```
 
@@ -110,26 +154,15 @@ df |>
 
 # Additionne les items d'un thème puis comparaison selon groupe
 
-items3 <- function(df, deb, nomfich = classeur, nexpx = expx) {
-nexp <- paste0(deb, "_tab_g")
-titre <- paste0(str_to_upper(deb), " selon le groupe")
-tab1 <- df |>
+item3 <- function(thn, classeur = classeur, nexp = "", nexpx = FALSE){
+tab1 <- numheiq |>
   rowwise() |>
-  mutate(tot = sum(c_across(starts_with(deb)))) |>
+  mutate(tot = sum(c_across(thn))) |>
   tbl_continuous( variable = tot, include = groupe) |>
-  modify_caption(titre) |> 
-  add_p() |> 
-  bold_labels() |> 
-       as_kable_extra() |> 
-       kable_styling(bootstrap_options = "striped", 
-                     font_size = 14, 
-                     fixed_thead = TRUE) 
-    if (expx) {
-      tab1 |>
-        as_tibble() |>
-        write.xlsx(nomfich, sheetName = nexp, append = TRUE)
-    }
-return(tab1)
+  add_p() |>
+  bold_labels() |>
+  pexptabph(nomfich = classeur, nomsheet = nexp, exp = nexpx)
+  return(tab1)
 }
 ```
 
@@ -138,18 +171,17 @@ return(tab1)
 
 # Analyse selon les groupes en linéaire. 
 
-item4 <- function(df,deb, grp = groupe, tit1 = "",tit2 = ""){
-zz <- df|>
+item4 <- function(thn, tit = titc){
+zz <- numheiq |>
   rowwise() |>
-  mutate(tot = sum(c_across(starts_with(deb)))) |> 
-  mutate(ggg = {{grp}})
+  mutate(tot = sum(c_across(thn)))
 
-ll <- lm(tot ~ ggg, data = zz)
+ll <- lm(tot ~ groupe, data = zz)
 panels <- list(
   list(width = 0.03),
-  list(width = 0.1, display = ~variable, fontface = "bold", heading = tit1),
-  list(width = 0.1, display = ~level, heading = tit2),
-  list(width = 0.05, display = ~n, hjust = 1, heading = "n"),
+  list(width = 0.1, display = ~variable, fontface = "bold", heading = tit),
+  list(width = 0.1, display = ~level),
+  list(width = 0.05, display = ~n, hjust = 1),
   list(width = 0.03, item = "vline", hjust = 0.5),
   list(
     width = 0.55, item = "forest", hjust = 0.5, heading = "Odd Ratio", linetype = "dashed",
@@ -172,17 +204,17 @@ forest_model(ll, panels)
 ```
 
 
-# Description de la population
+
 
 L'échantillon comporte `r nrow(tt)` cas pour `r ncol(tt)-2` variables. Il n'y a aucune donnée manquante pour les divers scores ou échelles.
 
 
-## Démographie
+
 
 ```{r}
 #| label: tbl-clinique1
 #| tbl-cap: Description démographique
-#| eval: true
+#| eval: false
 
 tt |> 
   dplyr::select(c(2:14, 96:97, 102)) |> 
@@ -194,8 +226,7 @@ tt |>
                           vaccin_pneumocoque = "Oui"))  |>
    formt(oui = TRUE) |> 
   add_p() |>
-  pexptabph(exp = expx, nomfich = classeur, nomsheet = "demo") |> 
-  scroll_box(width = "100%", height = "700px")
+  gexptabph(exp = expx, nomfich = classeur, nomsheet = "demo")
 ```
 
 Les différences entre les groupes (poids, situation familiale...) semblent relever du hasard. Il était prévisible d'avoir ce type de résultat vu la petite taille de l'échantillon.
@@ -249,268 +280,150 @@ numheiq <- tt |>
   dplyr::select(c(starts_with("heiq"))) |> 
   mutate_all(as.numeric)
 numheiq$groupe <- tt$groupe
+#
+
+
+tth <- tt |>
+  dplyr::select(all_of(19:58)) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Items",
+    values_to = "Réponse"
+  ) |>
+  mutate(Items = factor(Items))
+#
+bheiq <- pull(bn[18:57,1])
+nheiq <- c("Engagement positif et actif dans la vie",
+           "Comportements dirigés vers la santé",
+           "Acquisition d’habiletés et de techniques",
+           "Approches et attitudes constructives",
+           "Autocontrôle et perspicacité",
+           "Navigation des services de santé",
+           "Intégration sociale et soutien",
+           "Bien-être émotionnel")
+
+nheiq2 <- c("Engagement positif et\n actif dans la vie",
+           "Comportements dirigés\n vers la santé",
+           "Acquisition d’habiletés\n et de techniques",
+           "Approches et attitudes\n constructives",
+           "Autocontrôle et perspicacité",
+           "Navigation des\n services de santé",
+           "Intégration sociale\n et soutien",
+           "Bien-être émotionnel")
 ```
 
-## Thème HDA
+## Engagement positif et actif dans la vie
 
 ```{r}
-#| label: tbl-hda 
-#| tbl-cap: "Thème HDA"
+#| label: tbl-heiq1
+#| tbl-cap: "HEIQ - Engagement positif et actif dans la vie"
 
-deb <- "heiq_hda"
-lim <- 18:21
+thn <- c(2,5,8,10,15)
+tith <- nheiq[1]
+titc <- nheiq2[1]
 
-items1(tt,deb, lim)
+item1(thn, classeur = classeur, nexp = "heiq1", nexpx = expx)
 ```
 
 ```{r}
-#| label: fig-heiq-hda
-#| fig-cap: Score HEIQ - Thème HDA
+#| label: fig-heiq1
+#| fig-cap: "HEIQ - Engagement positif et actif dans la vie"
 
-items2(tt,deb, lim,"Score HEIQ - Thème HDA")
+#item2(thn, tith)
 ```
 
 ### Comparaison entre groupes
 
 ```{r}
-#| label: tbl-grheiq-hda
-#| tbl-cap: Score HEIQ - Thème HDA selon le groupe
+#| label: tbl-grheiq1
+#| tbl-cap: "HEIQ - Engagement positif et actif dans la vie selon le groupe"
 
-items3(numheiq, deb)
+#item3(thn, classeur = classeur, nexp = "heiq1g", nexpx = expx)
 ```
 
 ```{r}
-#| label: fig-grheiq-hda
-#| fig-cap: Score HEIQ - Thème HDA selon le groupe
+#| label: fig-grheiq1
+#| fig-cap: "HEIQ - Engagement positif et actif dans la vie selon le groupe"
 
-item4(numheiq, deb, tit1 = "HEIQ", tit2 = "Score HDA")
+item4(thn, tit = titc)
 ```
 
 
 
-## Thème PAEL
+## Comportements dirigés vers la santé
 
 ```{r}
-#| label: tbl-pael 
-#| tbl-cap: Thème PAEL
+#| label: tbl-heiq2
+#| tbl-cap: "HEIQ - Comportements dirigés vers la santé"
 
-deb <- "heiq_pael"
-lim <- 22:26
+thn <- c(1,9,13,19)
+tith <- nheiq[2]
+titc <- nheiq2[2]
 
-items1(tt,deb, lim)
+item1(thn, classeur = classeur, nexp = "heiq2", nexpx = expx)
 ```
 
 ```{r}
-#| label: fig-heiq-pael
-#| fig-cap: Score HEIQ - Thème PAEL
+#| label: fig-heiq2
+#| fig-cap: "HEIQ - Comportements dirigés vers la santé"
 
-items2(tt,deb, lim, "Score HEIQ - Thème PAEL")
+#item2(thn, tith)
 ```
 
 ### Comparaison entre groupes
 
 ```{r}
-#| label: tbl-grheiq-pael
-#| tbl-cap: Score HEIQ - Thème PAEL selon le groupe
+#| label: tbl-grheiq2
+#| tbl-cap: "HEIQ - Comportements dirigés vers la santé selon le groupe"
 
-items3(numheiq,deb)
+item3(thn, classeur = classeur, nexp = "heiq2g", nexpx = expx)
 ```
 
 ```{r}
-#| label: fig-grheiq-pael
-#| fig-cap: Score HEIQ - Thème PAEL selon le groupe
+#| label: fig-grheiq2
+#| fig-cap: "HEIQ - Comportements dirigés vers la santé selon le groupe"
 
-item4(numheiq, deb, tit1 = "HEIQ", tit2 = "Score PAEL")
+item4(thn, tit = titc)
 ```
 
-
-
-
-## Thème ED
+## Acquisition d’habiletés et de techniques
 
 ```{r}
-#| label: tbl-ed
-#| tbl-cap: Thème ED
+#| label: tbl-heiq3
+#| tbl-cap: "Acquisition d’habiletés et de techniques"
 
-deb <- "heiq_ed"
-lim <- 27:32
+thn <- c(23,25,26,30)
+tith <- nheiq[3]
+titc <- nheiq2[3]
 
-items1(tt,deb, lim)
+item1(thn, classeur = classeur, nexp = "heiq3", nexpx = expx)
 ```
 
 ```{r}
-#| label: fig-heiq-ed
-#| fig-cap: Score HEIQ - Thème ED
+#| label: fig-heiq3
+#| fig-cap: "Acquisition d’habiletés et de techniques"
 
-items2(tt,deb, lim, "Score HEIQ - Thème ED")
+#item2(thn, tith)
 ```
 
 ### Comparaison entre groupes
 
 ```{r}
-#| label: tbl-grheiq-ed
-#| tbl-cap: Score HEIQ - Thème ED selon le groupe
+#| label: tbl-grheiq3
+#| tbl-cap: "Score HEIQ - Acquisition d’habiletés et de techniques selon le groupe"
 
-items3(numheiq,deb)
-```
-
-## Thème SMI
-
-```{r}
-#| label: tbl-smi
-#| tbl-cap: Thème SMI
-
-deb <- "heiq_smi"
-lim <- 33:38
-
-items1(tt,deb, lim)
+item3(thn, classeur = classeur, nexp = "heiq3g", nexpx = expx)
 ```
 
 ```{r}
-#| label: fig-heiq-smi
-#| fig-cap: Score HEIQ - Thème SMID
+#| label: fig-grheiq3
+#| fig-cap: "Score HEIQ - Acquisition d’habiletés et de techniques selon le groupe"
 
-items2(tt, deb, lim, "Score HEIQ - Thème SMI")
-```
-
-### Comparaison entre groupes
-
-```{r}
-#| label: tbl-grheiq-smi
-#| tbl-cap: Score HEIQ - Thème SMI selon le groupe
-
-items3(numheiq,deb)
-```
-
-## Thème CAA
-
-```{r}
-#| label: tbl-caa
-#| tbl-cap: Thème CAA
-deb <- "heiq_caa"
-lim <- 39:43
-  
-items1(tt,deb, lim)
-
-```
-
-```{r}
-#| label: fig-heiq-caa
-#| fig-cap: Score HEIQ - Thème CAA
-
-items2(tt,deb, lim, "Score HEIQ - Thème CAA")
-```
-
-### Comparaison entre groupes
-
-```{r}
-#| label: tbl-grheiq-caa
-#| tbl-cap: Score HEIQ - Thème CAA selon le groupe
-
-items3(numheiq,deb)
+item4(thn, tit = titc)
 ```
 
 
-```{r}
-#| label: fig-grheiq-caa
-#| fig-cap: Score HEIQ - Thème CAA selon le groupe
 
-item4(numheiq, deb, tit1 = "HEIQ", tit2 = "Score CAA")
-```
-
-
-## Thème STA
-
-```{r}
-#| label: tbl-sta
-#| tbl-cap: Thème STA
-
-deb <- "heiq_sta"
-lim <- 44:47
-
-items1(tt,deb,lim)
-```
-
-```{r}
-#| label: fig-heiq-sta
-#| fig-cap: Score HEIQ - Thème STA
-
-items2(tt,deb,lim,"Score HEIQ - Thème STA")
-```
-
-### Comparaison entre groupes
-
-```{r}
-#| label: tbl-grheiq-sta
-#| tbl-cap: Score HEIQ - Thème STA selon le groupe
-
-items3(numheiq, deb)
-```
-
-
-```{r}
-#| label: fig-grheiq-sta
-#| fig-cap: Score HEIQ - Thème STA selon le groupe
-
-item4(numheiq, deb, tit1 = "HEIQ", tit2 = "Score STA")
-```
-
-
-## Thème SIS
-
-```{r}
-#| label: tbl-sis
-#| tbl-cap: Thème SIS
-
-deb <- "heiq_sis"
-lim <- 48:52
-
-items1(tt,deb,lim)
-```
-
-```{r}
-#| label: fig-heiq-sis
-#| fig-cap: Score HEIQ - Thème SIS
-
-items2(tt,deb,lim,"Score HEIQ - Thème SIS")
-```
-
-### Comparaison entre groupes
-
-```{r}
-#| label: tbl-grheiq-sis
-#| tbl-cap: Score HEIQ - Thème SIS selon le groupe
-
-items3(numheiq, deb)
-```
-
-## Thème HSN
-
-```{r}
-#| label: tbl-hsn
-#| tbl-cap: Thème HSN
-#| 
-deb <- "heiq_hsn"
-lim <- 53:57
-
-items1(tt,deb,lim)
-```
-
-```{r}
-#| label: fig-heiq-hsn
-#| fig-cap: Score HEIQ - Thème HSN
-
-items2(tt,deb,lim,"Score HEIQ - Thème HSN")
-```
-
-### Comparaison entre groupes
-
-```{r}
-#| label: tbl-grheiq-hsn
-#| tbl-cap: Score HEIQ - Thème HSN selon le groupe
-
-items3(numheiq, deb)
-```
 
 
 ## Analyse Globale
@@ -535,7 +448,7 @@ Puis on recherchera des facteurs démographiques ou autres qui pourraient entrai
 items3(numheiq, "heiq")
 ```
 
-## Analyse en intention de traiter
+### Analyse en intention de traiter
 
 On compare le groupe `ETP` au groupe `témoin`.
 
@@ -582,7 +495,7 @@ numheiq |>
   pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq-per_prot")
 ```
 
-### Analyse des facteurs associés
+## Analyse des facteurs associés
 
 ```{r}
 #| label: tbl-heiqassocdemo
@@ -599,7 +512,7 @@ tt |>
   tbl_continuous(totheiq, include = c(2,3,6:14,97,102)) |> 
   add_p() |> 
   bold_labels() |>
-    pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq_fact") |> 
+    pexptabph(exp = expx, nomfich = classeur, nomsheet = "heiq_fact", lg = TRUE) |> 
   scroll_box(width = "100%", height = "700px")
 ```
 
@@ -795,7 +708,7 @@ had$groupe <- tt$groupe
 tbl_cross(had, groupe, Anxiété, percent = "row", margin = "row") %>%
 add_p() %>%
 bold_labels() |> 
-  pexptabph(exp = expx, nomfich = classeur, nomsheet = "had-anx")
+  gexptabph(exp = expx, nomfich = classeur, nomsheet = "had-anx")
 ```
 
 ```{r}
@@ -805,7 +718,7 @@ bold_labels() |>
 tbl_cross(had, groupe, Dépression, percent = "row", margin = "row") %>%
 add_p() %>%
 bold_labels() |> 
-  pexptabph(exp = expx, nomfich = classeur, nomsheet = "had-dep")
+  gexptabph(exp = expx, nomfich = classeur, nomsheet = "had-dep")
 ```
 
 ## Critère 3
@@ -873,6 +786,8 @@ On ne retrouve alors que deux patients, un hospitalisé sur NOVO, un hospitalis�
 ```{r}
 #| label: tbl-satisf
 #| tbl-cap: questionnaire de satisfaction
+#| tbl-colwidths : [20,30,10,10,10,10,10]
+
 
 tt |> 
   dplyr::select(c(90:96)) |> 
@@ -884,8 +799,15 @@ tt |>
                           satisfaction_6 = "Oui")) |>
    formt(oui = TRUE) |> 
   add_p() |>
-  pexptabph(exp = expx, nomfich = classeur, nomsheet = "demo") |> 
-  scroll_box(width = "100%", height = "700px")
+      as_kable_extra(longtable = FALSE, booktabs = TRUE) |>
+      kable_styling(latex_options = c("HOLD_position", "scale_down", "repeat_header")) |> 
+  column_spec(1, width = "40em")
+  
+  #   if (exp) {
+  #     dfk |>
+  #       as_tibble() |>
+  #       write.xlsx(nomfich, sheetName = nomsheet, append = TRUE)
+  # gexptabph(exp = expx, nomfich = classeur, nomsheet = "demo")
 ```
 
 # Technique {.appendix}
@@ -910,7 +832,7 @@ nn <- n.for.2means(moy1, moy2, et, et)
 nb <- nn$n1
 ```
 
-Le critère principal porte sur la comparaison du résultat chiffré du score \textsc{heiq} entre le groupe interventionnel & le groupe témoin. Une étude de validation de la version française de ce score \marginnote{Validation française du health education impact questionnaire (\textsc{heiq}) auprès d’une clientèle avec maladies chroniques en soins de première ligne -- Anne BÉLANGER (Université du Québec à Chicoutimi 2015)} retrouve sur un échantillon de près de 300 cas un résultat global à `r moy1` ± `r round(et,2)`. En estimant qu'une différence de 10 % de ce score entre les deux groupes a une signification clinique & que les deux groupes gardent le même écart-type, on peut estimé l'effectif nécessaire à **`r nb` cas** utilisables par groupe soit un minimum de `r ceiling(nb* 1.1)` cas à inclure au total.
+Le critère principal porte sur la comparaison du résultat chiffré du score \textsc{heiq} entre le groupe interventionnel & le groupe témoin. Une étude de validation de la version française de ce score \footnote{Validation française du health education impact questionnaire (\textsc{heiq}) auprès d’une clientèle avec maladies chroniques en soins de première ligne -- Anne BÉLANGER (Université du Québec à Chicoutimi 2015)} retrouve sur un échantillon de près de 300 cas un résultat global à `r moy1` ± `r round(et,2)`. En estimant qu'une différence de 10 % de ce score entre les deux groupes a une signification clinique & que les deux groupes gardent le même écart-type, on peut estimé l'effectif nécessaire à **`r nb` cas** utilisables par groupe soit un minimum de `r ceiling(nb* 1.1)` cas à inclure au total.
 
 ## Données manquantes & contrôle qualité
 
@@ -946,71 +868,4 @@ Une analyse de la durée de séjour a été réalisée sur le même principe. On
 
 L'analyse statistique a été réalisée avec le logiciel **R** [@rstat] & divers packages en particulier `tidyverse` [@tidy] & `baseph` [@baseph].
 
-## Import
 
-```{r}
-#| label: import
-
-importph <- function(){
-rm(list=ls())
-library(readODS)
-library(tidyverse)
-library(janitor)
-library(baseph)
-library(labelled)
-#
-nan <- c("NA","ND",""," ", "Manquant")
-
-mp <- read_ods("datas/MPSAT.ods", sheet = "mpsat", na = nan) |>
-  janitor::clean_names() |>
-  dplyr::mutate_if(is.character, as.factor)
-bn <- read_ods("datas/MPSAT.ods", sheet = "bnom")
-var_label(mp) <- bn$nom
-mp <- mp |>
-  dplyr::select(1,2,11:20)
-#
-tt <- read_ods("datas/questions.ods", sheet = "quest",na = nan) |>
-  janitor::clean_names() |>
-  dplyr::mutate_if(is.character, as.factor)
-bn <- read_ods("datas/questions.ods", sheet = "noms")
-var_label(tt) <- bn$Nom
-  #BMI
-tt <- tt |>
-  mutate(bmi = 10000*poids/taille^2) |>
-  mutate(bmi = baseph::bmiph(bmi,"fr")) |>
-  relocate(bmi, .after = "taille") |>
-# HEIQ
-mutate(across(starts_with("heiq"), function(x) factor(x,
-   c( "En accord", "Fortement en accord", "En désaccord", "Fortement en désaccord"
-  )))) |>
-mutate(across(starts_with("heiq"), function(x) fct_relevel(x,
-                                                               "Fortement en désaccord","En désaccord", "En accord", "Fortement en accord"))) |>
-  mutate(across(starts_with("vq11"), function(x) factor(x,levels(tt$vq11_3)))) |>
-  mutate(across(starts_with("vq11"), function(x) fct_relevel(x,
- "Pas du tout","Un peu", "Moyennement", "Beaucoup","Extrêmement"))) |>
-  #VQ11
-  mutate(across(starts_with("vq11"), function(x) factor(x,levels(tt$vq11_3)))) |>
-  mutate(across(starts_with("vq11"), function(x) fct_relevel(x,
- "Pas du tout", "Un peu", "Moyennement", "Beaucoup"))) |>
-  ## Réordonnancement de tt$breq_2_1
-  mutate(across(starts_with("breq"), function(x) fct_relevel(x,
-    "Pas vrai du tout", "Moyennement vrai", "Tout à fait vrai"))) |>
-## Réordonnancement de tt$satisfaction_2
-mutate(satisfaction_2 = fct_relevel(satisfaction_2,
-    "Dans la journée", "En 24 heures", "En 48 heures", "En 1 semaine",
-    "Plus"))
-#
-tt <- left_join(tt, mp, by = "id")
-#
-dd <- read_ods("datas/MPSAT-ETP_dates.ods") |>
-  clean_names() |>
-  mutate(across(starts_with("date"),mdy )) |>
-  mutate(across(starts_with("date_hosp"), function(x) as.numeric(x - date_integration))) |>
-  mutate(across(starts_with("date_hosp"), function(x) as.factor(ifelse((x>365 | x<0),"non","oui"))))
-#
-
-save(tt, bn, dd, file = "datas/quest.RData")
-}
-```
-
-:::

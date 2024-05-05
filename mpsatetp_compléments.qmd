@@ -1,0 +1,371 @@
+---
+subtitle: "Analyse statistique - Compléments"
+lang: fr
+author:
+  - name: "D\\up{r} Philippe \\textsc{Michel}"
+    affiliations:
+      name: "USRC -- Hôpital NOVO"
+      orcid: "0000-0003-2392-7186"
+      email: "philippe.michel@ght-novo.fr"
+      role: "Statisticien"
+      department: "Unité de Soutien à la Recherche Clinique"
+format:
+ titlepage-pdf:
+  titlepage: bg-image
+  titlepage-bg-image: "novo_usrc.png"
+  logo-space-after: "0\\baselineskip"
+  documentclass: scrreprt
+  number-sections: true
+  titlepage-footer:  "Anne-Charlotte \\textsc{Tauveron} -- Hôtel du Département du Val d’Oise – MDPH \\newline D\\up{r} Bruno \\textsc{Philippe} -- Service de Pneumologie, réhabilitation respiratoire & SSR Hôpital \\textsc{novo} (Site Aincourt)\\newline \\newline Chef de projet : M\\up{me} Mathilde \\textsc{Wlodarczyk}\\newline \\newline Évaluation des impacts multidimensionnels des ateliers d’éducation thérapeutique des patients (ETP) sur la gestion de la maladie, la qualité de vie, la santé mentale des patients atteints de \\textsc{bpco} pris en charge par la \\textsc{mpsat} sur le territoire \\textsc{novo}  \\newline \\newline \\today"
+titlepage-theme:
+  title-fontstyle: ["Huge", "bfseries"]
+  title-color: novo
+  subtitle-color: novo
+  subtitle-fontstyle: ["huge"]
+  logo-size: "0.2\\textheight"
+  vrule-width: "0.1cm"
+  vrule-color: novo
+include-in-header:
+   text: |
+    \definecolor{novo}{HTML}{27484b}
+    \usepackage{siunitx}
+    \usepackage{arsenal}
+df-print : kable
+jss-pdf:
+  keep-tex: true
+pdf-engine: lualatex
+keep-tex: true
+number-sections: true
+toc: true
+lof: true
+lot: true
+fig-cap-location: bottom
+tbl-cap-location: top
+classoption: [french]
+papersize: a4
+editor: source
+#bibliography: stat.bib
+#cite-method: biblatex
+#csl: jama.csl
+#reference-location: margin
+#citation-location: margin
+license: "MIT"
+echo: false
+warning: false
+message: false
+cache: false
+fig-responsive: true
+---
+
+
+
+
+```{r}
+#| label: info
+
+ rm(list=ls())
+library(baseph)
+library(tidyverse)
+library(kableExtra)
+library(scales)
+library(forestmodel)
+library(gtsummary)
+library(epiDisplay)
+library(labelled)
+library(ggstats)
+library(DataExplorer)
+library(xlsx)
+library(lubridate)
+library(readODS)
+library(janitor)
+
+expx <- TRUE
+classeur <- "mpsatetp_complements.xlsx"
+if (expx){system(paste0("rm -f ",classeur))}
+#
+theme_gtsummary_language(language = "fr", decimal.mark = ",")
+options(OutDec = ",")
+#
+load(file = "datas/quest.RData")
+# sessionInfo()
+```
+
+```{r}
+#| label: importsatisf
+nan <- c("NA","ND",""," ", "Manquant")
+sat <- read_ods("datas/satisfaction.ods", sheet = "satisf",na = nan) |>
+  janitor::clean_names() |>
+  mutate(delai_mg= fct_relevel(delai_mg,"Dans la journée", "En 24 heures", "En 48 heures", "En 1 semaine","Plus"))
+bn <- read_ods("datas/satisfaction.ods", sheet = "bnom")
+
+
+
+sat$groupe <- tt$groupe
+sat <-  sat |> 
+   dplyr::mutate(across(c(1:4,6:8,10,12:13), as.factor))
+var_label(sat) <- bn$nom
+```
+
+```{r}
+#| label: macrotab
+
+formt <- function(tabx, oui = TRUE, comp = "") {
+  if (oui) {
+    cpt = 'Pour les données en oui/non seul le résultat pour oui a été présenté'
+  }
+  else{
+    cpt = ''
+  }
+#  cpt = paste0(cpt, ". ", comp)
+  tabx |>
+ modify_footnote(update = everything() ~ cpt) |>
+    add_n() |>
+     modify_header(label ~ "") |> 
+    add_overall() |> 
+    bold_labels()
+}
+```
+
+```{r}
+#| label: macro-item1
+
+item1 <- function(thx,
+                  classeur = "",
+                  nexp = "",
+                  nexpx = FALSE) {
+  th <- paste0("heiq_", thx)
+  tab1 <- tth |>
+    dplyr::filter(Items %in% th) |> 
+    mutate(Items = fct_relevel(Items, th)) |>
+    mutate(Items = factor(Items,labels = bheiq[thn])) |>
+    tbl_cross(
+      missing = "no",
+      row = Items,
+      col = Réponse,
+      margin = NULL,
+      percent = "row"
+    ) |>
+    bold_labels() 
+  
+  tab1 |> 
+    pexptabph(nomfich = classeur,
+              nomsheet = nexp,
+              exp = nexpx)
+  return(tab1)
+}
+```
+
+```{r}
+#| label: macro-item2
+
+item2 <- function(thh = thn, tit = tith) {
+  thx <- paste0("heiq_", thh)
+  nn <-  bheiq[thh]
+  tt |>
+    dplyr::select(thx) |>
+    rename_with(~ nn) |> 
+    gglikert() +
+    labs(title = tit) +
+    scale_y_discrete(labels = label_wrap(40))
+}
+```
+
+```{r}
+#| label: macro-item3
+
+# Additionne les items d'un thème puis comparaison selon groupe
+
+item3 <- function(thn, classeur = classeur, nexp = "", nexpx = FALSE){
+tab1 <- numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(thn))) |>
+  tbl_continuous( variable = tot, include = groupe) |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(nomfich = classeur, nomsheet = nexp, exp = nexpx)
+  return(tab1)
+}
+```
+
+```{r}
+#| label: macro-item4
+
+# Analyse selon les groupes en linéaire. 
+
+item4 <- function(thn, tit = titc){
+zz <- numheiq |>
+  rowwise() |>
+  mutate(tot = sum(c_across(thn)))
+
+ll <- lm(tot ~ groupe, data = zz)
+panels <- list(
+  list(width = 0.03),
+  list(width = 0.1, display = ~variable, fontface = "bold", heading = tit),
+  list(width = 0.1, display = ~level),
+  list(width = 0.05, display = ~n, hjust = 1),
+  list(width = 0.03, item = "vline", hjust = 0.5),
+  list(
+    width = 0.55, item = "forest", hjust = 0.5, heading = "Odd Ratio", linetype = "dashed",
+    line_x = 0
+  ),
+  list(width = 0.03, item = "vline", hjust = 0.5),
+  list(width = 0.12, display = ~ ifelse(reference, "Reference", sprintf(
+    "%0.2f (%0.2f, %0.2f)",
+    trans(estimate), trans(conf.low), trans(conf.high)
+  )), display_na = NA),
+  list(
+    width = 0.05,
+    display = ~ ifelse(reference, "", format.pval(p.value, digits = 1, eps = 0.001)),
+    display_na = NA, hjust = 1, heading = "p"
+  ),
+  list(width = 0.03)
+)
+forest_model(ll, panels)
+}
+```
+
+\clearpage
+# Vaccinations
+
+```{r}
+#| label: tbl-vaccins
+#| tbl-cap: Vaccinations selon le groupe
+
+tt |> 
+  dplyr:: select(starts_with("vaccin"), groupe) |>
+  tbl_summary( missing = "no",
+               by = groupe,
+               value = list(vaccin_grippe = "Oui",
+                          vaccin_covid = "Oui",
+                          vaccin_pneumocoque = "Oui"))  |>
+ add_p(test = everything() ~ "chisq.test") |> 
+   formt(oui = FALSE) |> 
+  gexptabph(exp = expx, nomfich = classeur, nomsheet = "vaccins")
+
+```
+
+\clearpage
+# Traitements
+
+Ce tableau présente les traitements reçus, pas les patients. Un même patient peut avoir reçu plusieurs traitements. 
+
+\clearpage
+# Questionnaire de satisfaction
+
+Comme indiqué dans les résultats je ne traite pas les réponses ouvertes, inutilisables en statistiques.
+
+je n'ai qu'un seul cas qui a répondu  `Oui` à la question sur les professionnels de santé (P - 025 - LC) qui désirait `Infirmier(e) coordinateur/coordinatrice`.
+
+\clearpage
+## Description
+Ce tableau ne reprend que les réponses simples.
+
+```{r}
+#| label: tbl-satdesc
+#| tbl-cap: Questionnaire Satisfaction - Description
+
+sat |> 
+  dplyr::select(2:4,6:8,10,12:13, groupe) |>
+  drop_na(groupe) |>
+  tbl_summary( missing = "no",
+               by = groupe,
+               value = list(medecin_traitant = "Oui",
+                            ipa = "Oui",
+                            personne_palie = "Oui",
+                            presences_2_prof = "Oui"
+                            )) |> 
+  formt(oui = TRUE) |> 
+  add_p(test = everything() ~ "chisq.test") |> 
+  gexptabph(exp = expx, nomfich = classeur, nomsheet = "satisfaction_desc") |> 
+  column_spec(1, width = "30em")
+```
+
+\clearpage
+## Éléments de prise en charge
+
+::: {.callout-note}
+Les éléments de prise en charge sont des items à choix multiples. Le total des réponses est donc supérieur au nombre de cas.
+:::
+
+```{r}
+#| label: macro-pac
+
+pacx <- function(var,gg) {
+  zz <- str_split_fixed(var,";",6) 
+  zz [zz == ""] <- NA
+pac <-   as_tibble(zz) |> 
+    pivot_longer(cols = everything(), names_to = "element", values_to = "value") |> 
+    dplyr::select(value) |> 
+    drop_na(value) |>
+    mutate(value = as.factor(value))
+pac <- pac$value
+groupe <- rep(gg,length(pac))
+  return(tibble(pac,groupe))
+}
+
+
+```
+
+
+
+```{r}
+#| label: tbl-pac
+#| tbl-cap: "Quels éléments de prise en charge nécessitent des améliorations ?"
+#| 
+
+aax <- sat |> 
+dplyr::filter(groupe == "ETP")
+pac1 <- pacx(aax$elements_pac, "ETP")
+#
+aax <- sat |> 
+dplyr::filter(groupe == "Témoin")
+pac2 <- pacx(aax$elements_pac, "Témoin")
+#
+aax <- sat |> 
+dplyr::filter(groupe == "Témoin avec RR")
+pac3 <- pacx(aax$elements_pac, "Témoin avec RR")
+#
+aa <- bind_rows(pac1,pac2,pac3) 
+var_label(aa$pac) <- "Quels éléments de votre prise en charge médicale nécessitent des améliorations à ce jour ?" 
+aa |> 
+mutate(pac =   fct_recode(pac,
+    "Votre niveau de participation et d’implication dans les décisions concernant votre santé, avec les professionnels de santé" = "Votre niveau de participation et d’implication dans les décisions concernant votre santé, avec les professionnels de santé;"
+  )) |> 
+mutate(pac = fct_infreq(pac)) |>
+  tbl_summary(missing = "no",
+by = "groupe") |>
+# add_p(test = everything() ~ "chisq.test") |> 
+add_overall() |>
+ modify_header(label ~ "") |> 
+  bold_labels() |>
+    gexptabph(exp = expx, nomfich = classeur, nomsheet = "pac") |> 
+column_spec(1, width = "35em")
+```
+
+Vu le nombre élevé d'items aucun test n'est possible. 
+
+\clearpage
+## Avantage hors hôpital
+
+::: {.callout-note}
+IL s'agit là aussi d'items à choix multiples. Le total des réponses est donc supérieur au nombre de cas.
+:::
+
+```{r}
+#| label: tbl-etphorsav
+#| tbl-cap: "ETP hors hôpital : avantages"
+
+
+zz <- str_split_fixed(sat$etp_hors_hopital_avantages,";",6) 
+zz [zz == ""] <- NA
+  as_tibble(zz) |> 
+  pivot_longer(cols = everything(), names_to = "element", values_to = "value") |> 
+  dplyr::select(value) |> 
+  rename(Élements = value) |> 
+  mutate(Élements = fct_infreq(Élements)) |>
+  tbl_summary(missing = "no") |> 
+  bold_labels() |>
+ modify_header(label ~ "") |> 
+    pexptabph(exp = expx, nomfich = classeur, nomsheet = "horshop") |>
+column_spec(1, width = "35em")
+```

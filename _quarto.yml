@@ -3,13 +3,19 @@ lang: fr
 language:
   title-block-author-single: "Auteur"
 author:
-  - name: "D<up>r</up> Philippe MICHEL"
+  - name: "Dr Philippe MICHEL"
+    orcid: "0000-0003-2392-7186"
+    email: "philippe.michel@ght-novo.fr"
+    role: "Statisticien"
     affiliations:
       name: "USRC - Hôpital NOVO"
+      city: Pontoise
       department: "Unité de Soutien à la Recherche Clinique"
+title-block-banner: true
 format:
   html:
     theme: minty
+    embed-resources: true
     code-fold: true
     html-math-method: katex
     highlight-style: ayu
@@ -17,7 +23,9 @@ format:
     toc: true
     number-sections: true
     smooth-scroll: true
+    citation-hover: true
 bibliography: stat.bib
+csl: jama.csl
 license: "MIT"
 warning: false
 message: false
